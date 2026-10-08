@@ -1,0 +1,119 @@
+<?php
+declare(strict_types=1);
+
+final class TaskController
+{
+    private const PRIORITIES = ['low', 'normal', 'high', 'urgent'];
+
+    private const SELECT = 'SELECT t.*, p.name AS project_name, f.name AS phase_name, f.color AS phase_color, f.is_closed
+        FROM tasks t JOIN projects p ON p.id = t.project_id JOIN phases f ON f.id = t.phase_id';
+
+    /** `?include_children=1` incorpora las tareas de todos los subproyectos descendientes. */
+    public static function index(array $p): array
+    {
+        $pid = (int) $p['id'];
+        ProjectController::find($pid);
+        if (empty($_GET['include_children'])) {
+            return Db::all(self::SELECT . ' WHERE t.project_id = ? ORDER BY f.position, t.position', [$pid]);
+        }
+        return Db::all(
+            'WITH RECURSIVE tree (id) AS (
+                SELECT id FROM projects WHERE id = ?
+                UNION ALL
+                SELECT c.id FROM projects c JOIN tree ON c.parent_id = tree.id
+            ) ' . self::SELECT . ' WHERE t.project_id IN (SELECT id FROM tree) ORDER BY t.project_id, f.position, t.position',
+            [$pid]
+        );
+    }
+
+    public static function store(array $p, array $in): array
+    {
+        $pid = (int) $p['id'];
+        ProjectController::find($pid);
+        $phaseId = isset($in['phase_id']) ? (int) $in['phase_id'] : 0;
+        if (!$phaseId) {
+            $first = Db::one('SELECT id FROM phases WHERE project_id = ? ORDER BY position LIMIT 1', [$pid]);
+            $phaseId = (int) $first['id'];
+        }
+        self::assertPhaseBelongs($phaseId, $pid);
+        $pos = (int) Db::one('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM tasks WHERE phase_id = ?', [$phaseId])['n'];
+        Db::run(
+            'INSERT INTO tasks (project_id, phase_id, title, description, priority, due_date, position)
+             VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [$pid, $phaseId, Validate::string($in, 'title', true, 250), Validate::string($in, 'description', false, 65000),
+                Validate::enum($in, 'priority', self::PRIORITIES, 'normal'), Validate::date($in, 'due_date'), $pos]
+        );
+        return self::find(Db::insertId());
+    }
+
+    public static function update(array $p, array $in): array
+    {
+        $id = (int) $p['id'];
+        $task = self::find($id);
+        $phaseId = isset($in['phase_id']) ? (int) $in['phase_id'] : (int) $task['phase_id'];
+        if ($phaseId !== (int) $task['phase_id']) {
+            self::assertPhaseBelongs($phaseId, (int) $task['project_id']);
+            $pos = (int) Db::one('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM tasks WHERE phase_id = ?', [$phaseId])['n'];
+        } else {
+            $pos = (int) $task['position'];
+        }
+        Db::run(
+            'UPDATE tasks SET phase_id = ?, title = ?, description = ?, priority = ?, due_date = ?, position = ? WHERE id = ?',
+            [$phaseId, Validate::string($in, 'title', true, 250), Validate::string($in, 'description', false, 65000),
+                Validate::enum($in, 'priority', self::PRIORITIES, 'normal'), Validate::date($in, 'due_date'), $pos, $id]
+        );
+        return self::find($id);
+    }
+
+    /** Mueve una tarea a `phase_id` en el índice `index` (base 0) y renumera la fase destino. */
+    public static function move(array $p, array $in): array
+    {
+        $id = (int) $p['id'];
+        $task = self::find($id);
+        $phaseId = (int) ($in['phase_id'] ?? 0);
+        self::assertPhaseBelongs($phaseId, (int) $task['project_id']);
+        $index = max(0, (int) ($in['index'] ?? 0));
+
+        $pdo = Db::pdo();
+        $pdo->beginTransaction();
+        try {
+            $ids = array_map('intval', array_column(
+                Db::all('SELECT id FROM tasks WHERE phase_id = ? AND id <> ? ORDER BY position, id', [$phaseId, $id]),
+                'id'
+            ));
+            array_splice($ids, min($index, count($ids)), 0, [$id]);
+            Db::run('UPDATE tasks SET phase_id = ? WHERE id = ?', [$phaseId, $id]);
+            foreach ($ids as $i => $tid) {
+                Db::run('UPDATE tasks SET position = ? WHERE id = ?', [$i, $tid]);
+            }
+            $pdo->commit();
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+        return self::find($id);
+    }
+
+    public static function destroy(array $p): void
+    {
+        self::find((int) $p['id']);
+        Db::run('DELETE FROM tasks WHERE id = ?', [(int) $p['id']]);
+    }
+
+    public static function find(int $id): array
+    {
+        $row = Db::one(self::SELECT . ' WHERE t.id = ?', [$id]);
+        if (!$row) {
+            throw new HttpError(404, 'Tarea no encontrada');
+        }
+        return $row;
+    }
+
+    private static function assertPhaseBelongs(int $phaseId, int $projectId): void
+    {
+        $phase = Db::one('SELECT project_id FROM phases WHERE id = ?', [$phaseId]);
+        if (!$phase || (int) $phase['project_id'] !== $projectId) {
+            throw new HttpError(422, 'La fase no pertenece al proyecto de la tarea');
+        }
+    }
+}

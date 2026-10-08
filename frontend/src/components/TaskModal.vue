@@ -1,0 +1,65 @@
+<script setup>
+import { reactive, ref } from 'vue';
+import Modal from './Modal.vue';
+import { api } from '../api.js';
+import { PRIORITY } from '../store.js';
+
+const props = defineProps({ task: Object, phases: Array, projectId: Number, phaseId: Number });
+const emit = defineEmits(['close', 'saved', 'deleted']);
+
+const form = reactive({
+  title: props.task?.title ?? '',
+  description: props.task?.description ?? '',
+  priority: props.task?.priority ?? 'normal',
+  due_date: props.task?.due_date ?? '',
+  phase_id: props.task?.phase_id ?? props.phaseId ?? props.phases[0]?.id,
+});
+const error = ref('');
+
+async function save() {
+  error.value = '';
+  try {
+    const saved = props.task
+      ? await api.updateTask(props.task.id, form)
+      : await api.createTask(props.projectId, form);
+    emit('saved', saved);
+  } catch (e) {
+    error.value = e.message;
+  }
+}
+
+async function remove() {
+  if (!confirm('¿Eliminar esta tarea?')) return;
+  await api.deleteTask(props.task.id);
+  emit('deleted');
+}
+</script>
+
+<template>
+  <Modal :title="task ? 'Editar tarea' : 'Nueva tarea'" @close="$emit('close')">
+    <form @submit.prevent="save">
+      <label>Título<input v-model="form.title" required maxlength="250" autofocus /></label>
+      <label>Descripción<textarea v-model="form.description" rows="5" /></label>
+      <div class="row">
+        <label>Fase
+          <select v-model="form.phase_id">
+            <option v-for="f in phases" :key="f.id" :value="f.id">{{ f.name }}</option>
+          </select>
+        </label>
+        <label>Prioridad
+          <select v-model="form.priority">
+            <option v-for="(label, key) in PRIORITY" :key="key" :value="key">{{ label }}</option>
+          </select>
+        </label>
+        <label>Fecha límite<input type="date" v-model="form.due_date" /></label>
+      </div>
+      <p v-if="error" class="error">{{ error }}</p>
+      <footer>
+        <button v-if="task" type="button" class="danger" @click="remove">Eliminar</button>
+        <span class="spacer" />
+        <button type="button" @click="$emit('close')">Cancelar</button>
+        <button class="primary">Guardar</button>
+      </footer>
+    </form>
+  </Modal>
+</template>
