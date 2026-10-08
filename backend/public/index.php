@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 $root = dirname(__DIR__);
-foreach (['Db', 'Http', 'Controllers/ProjectController', 'Controllers/PhaseController', 'Controllers/TaskController'] as $f) {
+foreach (['Db', 'Http', 'Auth', 'Controllers/UserController', 'Controllers/ProjectController', 'Controllers/PhaseController', 'Controllers/TaskController'] as $f) {
     require_once "$root/src/$f.php";
 }
 Db::loadEnvFile("$root/.env");
@@ -16,6 +16,16 @@ if (PHP_SAPI === 'cli-server') {
 }
 
 $router = new Router();
+$router->add('POST', '/api/auth/login', fn ($p, $b) => Auth::login($b));
+$router->add('POST', '/api/auth/logout', function () { Auth::logout(); });
+$router->add('GET', '/api/auth/me', fn ($p, $b) => Auth::require());
+$router->add('PUT', '/api/auth/password', fn ($p, $b) => UserController::changePassword($p, $b));
+
+$router->add('GET', '/api/users', fn ($p, $b) => UserController::index());
+$router->add('POST', '/api/users', fn ($p, $b) => UserController::store($p, $b));
+$router->add('PUT', '/api/users/{id}', fn ($p, $b) => UserController::update($p, $b));
+$router->add('DELETE', '/api/users/{id}', fn ($p, $b) => UserController::destroy($p));
+
 $router->add('GET', '/api/projects', fn ($p, $b) => ProjectController::index());
 $router->add('POST', '/api/projects', fn ($p, $b) => ProjectController::store($p, $b));
 $router->add('GET', '/api/projects/{id}', fn ($p, $b) => ProjectController::show($p));
@@ -36,6 +46,11 @@ $router->add('DELETE', '/api/tasks/{id}', fn ($p, $b) => TaskController::destroy
 
 try {
     $path = rtrim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/') ?: '/';
+    Auth::start();
+    Auth::requireCsrfHeader($_SERVER['REQUEST_METHOD']);
+    if ($path !== '/api/auth/login' && $path !== '/api/auth/logout') {
+        Auth::require();
+    }
     $router->dispatch($_SERVER['REQUEST_METHOD'], $path);
 } catch (HttpError $e) {
     Router::json(['error' => $e->getMessage()], $e->status);

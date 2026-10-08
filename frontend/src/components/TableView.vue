@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { PRIORITY } from '../store.js';
+import { PRIORITY, auth } from '../store.js';
 
 const props = defineProps({ phases: Array, tasks: Array, showProject: Boolean });
 defineEmits(['open']);
@@ -8,6 +8,7 @@ defineEmits(['open']);
 const sortKey = ref('phase');
 const sortDir = ref(1);
 const filterPhase = ref('');
+const filterAssignee = ref('');
 const search = ref('');
 
 const PRIO_ORDER = { low: 0, normal: 1, high: 2, urgent: 3 };
@@ -16,12 +17,14 @@ const phaseIndex = computed(() => Object.fromEntries(props.phases.map((f, i) => 
 const rows = computed(() => {
   const q = search.value.trim().toLowerCase();
   const list = props.tasks.filter(
-    (t) => (!filterPhase.value || t.phase_id === filterPhase.value) && (!q || t.title.toLowerCase().includes(q))
+    (t) => (!filterPhase.value || t.phase_id === filterPhase.value) &&
+      (!filterAssignee.value || (filterAssignee.value === 'none' ? !t.assignee_id : t.assignee_id === filterAssignee.value)) && (!q || t.title.toLowerCase().includes(q))
   );
   const val = {
     title: (t) => t.title.toLowerCase(),
     phase: (t) => phaseIndex.value[t.phase_id] ?? 999,
     priority: (t) => PRIO_ORDER[t.priority],
+    assignee: (t) => (t.assignee_name ?? '\uffff').toLowerCase(),
     due_date: (t) => t.due_date ?? '9999-99-99',
     project_name: (t) => t.project_name.toLowerCase(),
   }[sortKey.value];
@@ -42,6 +45,11 @@ const arrow = (key) => (sortKey.value === key ? (sortDir.value > 0 ? ' ▲' : ' 
       <option value="">Todas las fases</option>
       <option v-for="f in phases" :key="f.id" :value="f.id">{{ f.name }}</option>
     </select>
+    <select v-model="filterAssignee">
+      <option value="">Todos los responsables</option>
+      <option value="none">Sin asignar</option>
+      <option v-for="u in auth.users" :key="u.id" :value="u.id">{{ u.name }}</option>
+    </select>
     <span class="muted">{{ rows.length }} tareas</span>
   </div>
   <table class="grid">
@@ -50,6 +58,7 @@ const arrow = (key) => (sortKey.value === key ? (sortDir.value > 0 ? ' ▲' : ' 
         <th @click="sort('title')">Tarea{{ arrow('title') }}</th>
         <th v-if="showProject" @click="sort('project_name')">Proyecto{{ arrow('project_name') }}</th>
         <th @click="sort('phase')">Fase{{ arrow('phase') }}</th>
+        <th @click="sort('assignee')">Responsable{{ arrow('assignee') }}</th>
         <th @click="sort('priority')">Prioridad{{ arrow('priority') }}</th>
         <th @click="sort('due_date')">Fecha límite{{ arrow('due_date') }}</th>
       </tr>
@@ -59,10 +68,11 @@ const arrow = (key) => (sortKey.value === key ? (sortDir.value > 0 ? ' ▲' : ' 
         <td>{{ t.title }}</td>
         <td v-if="showProject">{{ t.project_name }}</td>
         <td><span class="dot" :style="{ background: t.phase_color }" />{{ t.phase_name }}</td>
+        <td>{{ t.assignee_name ?? '' }}</td>
         <td><span class="badge" :class="`prio-${t.priority}`">{{ PRIORITY[t.priority] }}</span></td>
         <td>{{ t.due_date ?? '' }}</td>
       </tr>
-      <tr v-if="!rows.length"><td :colspan="showProject ? 5 : 4" class="muted">Sin tareas.</td></tr>
+      <tr v-if="!rows.length"><td :colspan="showProject ? 6 : 5" class="muted">Sin tareas.</td></tr>
     </tbody>
   </table>
 </template>

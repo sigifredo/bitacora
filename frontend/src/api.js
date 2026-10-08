@@ -1,15 +1,29 @@
+let unauthorizedHandler = () => {};
+export const onUnauthorized = (fn) => (unauthorizedHandler = fn);
+
 async function request(method, url, body) {
     const res = await fetch(url, {
         method,
-        headers: body ? { 'Content-Type': 'application/json' } : {},
+        headers: { 'X-Requested-With': 'fetch', ...(body ? { 'Content-Type': 'application/json' } : {}) },
         body: body ? JSON.stringify(body) : undefined,
     });
     const data = await res.json().catch(() => ({}));
+    if (res.status === 401 && !url.startsWith('/api/auth/login')) unauthorizedHandler();
     if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
     return data;
 }
 
 export const api = {
+    login: (email, password) => request('POST', '/api/auth/login', { email, password }),
+    logout: () => request('POST', '/api/auth/logout'),
+    me: () => request('GET', '/api/auth/me'),
+    changePassword: (data) => request('PUT', '/api/auth/password', data),
+
+    users: () => request('GET', '/api/users'),
+    createUser: (data) => request('POST', '/api/users', data),
+    updateUser: (id, data) => request('PUT', `/api/users/${id}`, data),
+    deleteUser: (id) => request('DELETE', `/api/users/${id}`),
+
     projects: () => request('GET', '/api/projects'),
     project: (id) => request('GET', `/api/projects/${id}`),
     createProject: (data) => request('POST', '/api/projects', data),

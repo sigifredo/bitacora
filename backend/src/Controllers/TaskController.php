@@ -5,8 +5,10 @@ final class TaskController
 {
     private const PRIORITIES = ['low', 'normal', 'high', 'urgent'];
 
-    private const SELECT = 'SELECT t.*, p.name AS project_name, f.name AS phase_name, f.color AS phase_color, f.is_closed
-        FROM tasks t JOIN projects p ON p.id = t.project_id JOIN phases f ON f.id = t.phase_id';
+    private const SELECT = 'SELECT t.*, p.name AS project_name, f.name AS phase_name, f.color AS phase_color, f.is_closed,
+        u.name AS assignee_name
+        FROM tasks t JOIN projects p ON p.id = t.project_id JOIN phases f ON f.id = t.phase_id
+        LEFT JOIN users u ON u.id = t.assignee_id';
 
     /** `?include_children=1` incorpora las tareas de todos los subproyectos descendientes. */
     public static function index(array $p): array
@@ -38,10 +40,10 @@ final class TaskController
         self::assertPhaseBelongs($phaseId, $pid);
         $pos = (int) Db::one('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM tasks WHERE phase_id = ?', [$phaseId])['n'];
         Db::run(
-            'INSERT INTO tasks (project_id, phase_id, title, description, priority, due_date, position)
-             VALUES (?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO tasks (project_id, phase_id, title, description, priority, assignee_id, due_date, position)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             [$pid, $phaseId, Validate::string($in, 'title', true, 250), Validate::string($in, 'description', false, 65000),
-                Validate::enum($in, 'priority', self::PRIORITIES, 'normal'), Validate::date($in, 'due_date'), $pos]
+                Validate::enum($in, 'priority', self::PRIORITIES, 'normal'), self::assignee($in), Validate::date($in, 'due_date'), $pos]
         );
         return self::find(Db::insertId());
     }
@@ -58,9 +60,9 @@ final class TaskController
             $pos = (int) $task['position'];
         }
         Db::run(
-            'UPDATE tasks SET phase_id = ?, title = ?, description = ?, priority = ?, due_date = ?, position = ? WHERE id = ?',
+            'UPDATE tasks SET phase_id = ?, title = ?, description = ?, priority = ?, assignee_id = ?, due_date = ?, position = ? WHERE id = ?',
             [$phaseId, Validate::string($in, 'title', true, 250), Validate::string($in, 'description', false, 65000),
-                Validate::enum($in, 'priority', self::PRIORITIES, 'normal'), Validate::date($in, 'due_date'), $pos, $id]
+                Validate::enum($in, 'priority', self::PRIORITIES, 'normal'), self::assignee($in), Validate::date($in, 'due_date'), $pos, $id]
         );
         return self::find($id);
     }
@@ -107,6 +109,18 @@ final class TaskController
             throw new HttpError(404, 'Tarea no encontrada');
         }
         return $row;
+    }
+
+    private static function assignee(array $in): ?int
+    {
+        $id = $in['assignee_id'] ?? null;
+        if ($id === null || $id === '') {
+            return null;
+        }
+        if (!Db::one('SELECT id FROM users WHERE id = ? AND is_active = 1', [(int) $id])) {
+            throw new HttpError(422, 'El responsable no existe o está inactivo');
+        }
+        return (int) $id;
     }
 
     private static function assertPhaseBelongs(int $phaseId, int $projectId): void

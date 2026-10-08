@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { api } from './api.js';
+import { api, onUnauthorized } from './api.js';
 
 export const store = reactive({
     projects: [],
@@ -20,6 +20,42 @@ export const store = reactive({
     },
 });
 
+export const auth = reactive({
+    user: null,
+    ready: false,
+    users: [],
+    get isAdmin() {
+        return this.user?.role === 'admin';
+    },
+    async init() {
+        try {
+            this.user = await api.me();
+        } catch {
+            this.user = null;
+        }
+        this.ready = true;
+        if (this.user) await this.loadData();
+    },
+    async login(email, password) {
+        this.user = await api.login(email, password);
+        await this.loadData();
+    },
+    async logout() {
+        await api.logout().catch(() => { });
+        this.user = null;
+        store.projects = [];
+    },
+    async loadData() {
+        [store.projects, this.users] = await Promise.all([api.projects(), api.users()]);
+    },
+    async refreshUsers() {
+        this.users = await api.users();
+    },
+});
+
+onUnauthorized(() => (auth.user = null));
+
+export const ROLE = { admin: 'Administrador', member: 'Miembro' };
 export const STATUS = {
     active: 'Activo',
     paused: 'En pausa',

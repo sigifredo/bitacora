@@ -2,7 +2,7 @@
 import { reactive, ref } from 'vue';
 import Modal from './Modal.vue';
 import { api } from '../api.js';
-import { PRIORITY } from '../store.js';
+import { PRIORITY, auth } from '../store.js';
 
 const props = defineProps({ task: Object, phases: Array, projectId: Number, phaseId: Number });
 const emit = defineEmits(['close', 'saved', 'deleted']);
@@ -11,6 +11,7 @@ const form = reactive({
   title: props.task?.title ?? '',
   description: props.task?.description ?? '',
   priority: props.task?.priority ?? 'normal',
+  assignee_id: props.task?.assignee_id ?? null,
   due_date: props.task?.due_date ?? '',
   phase_id: props.task?.phase_id ?? props.phaseId ?? props.phases[0]?.id,
 });
@@ -49,6 +50,14 @@ async function remove() {
         <label>Prioridad
           <select v-model="form.priority">
             <option v-for="(label, key) in PRIORITY" :key="key" :value="key">{{ label }}</option>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <label>Responsable
+          <select v-model="form.assignee_id">
+            <option :value="null">(sin asignar)</option>
+            <option v-for="u in auth.users.filter((x) => x.is_active || x.id === task?.assignee_id)" :key="u.id" :value="u.id">{{ u.name }}</option>
           </select>
         </label>
         <label>Fecha límite<input type="date" v-model="form.due_date" /></label>
