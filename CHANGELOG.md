@@ -3,6 +3,14 @@
 Todos los cambios relevantes del proyecto se documentan aquí.
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); la versión vigente está en `backend/VERSION`.
 
+## [0.3.0] - 2026-10-09
+
+### Añadido
+- **Checklist** en las tareas: lista de elementos con casilla, que se gestiona aparte de la descripción en el modal de edición. El tablero muestra el avance (`☑ 2/5`). Se guarda en la nueva columna `tasks.checklist` (JSON, migración `004_task_checklist.sql`).
+
+### Cambiado
+- La aplicación pasa a llamarse **Casiopea** (título de la pestaña, barra lateral, pantalla de login y documentación). Los identificadores técnicos (`project_admin`, `project-admin`) no cambian, para no romper instalaciones existentes.
+
 ## [0.2.0] - 2026-10-09
 
 ### Añadido

@@ -67,6 +67,7 @@ async function drop(phaseId) {
             <div>{{ t.title }}</div>
             <footer>
               <span class="badge" :class="`prio-${t.priority}`">{{ PRIORITY[t.priority] }}</span>
+              <span v-if="t.checklist.length" class="due" title="Checklist">☑ {{ t.checklist.filter(i => i.done).length }}/{{ t.checklist.length }}</span>
               <span v-if="t.assignee_name" class="avatar" :title="`${t.assignee_name} (${t.assignee_full_name})`">{{ t.assignee_name.slice(0, 2) }}</span>
               <span v-if="t.due_date" class="due" :class="{ late: overdue(t) }">{{ t.due_date }}</span>
             </footer>

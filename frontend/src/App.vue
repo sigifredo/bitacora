@@ -13,7 +13,7 @@ const version = __APP_VERSION__;
 
 // Tras el login el título de la pestaña incluye la versión.
 watchEffect(() => {
-  document.title = auth.user ? `Project Admin v${version}` : 'Project Admin';
+  document.title = auth.user ? `Casiopea v${version}` : 'Casiopea';
 });
 
 async function created(p) {
@@ -31,7 +31,7 @@ async function logout() {
 <template>
   <template v-if="auth.user">
     <aside class="sidebar">
-      <router-link to="/" class="brand">Project Admin <small class="version">v{{ version }}</small></router-link>
+      <router-link to="/" class="brand">Casiopea <small class="version">v{{ version }}</small></router-link>
       <router-link to="/" exact-active-class="active" class="nav-pending">Tareas pendientes</router-link>
       <div class="sidebar-head">
         <span>Proyectos</span>

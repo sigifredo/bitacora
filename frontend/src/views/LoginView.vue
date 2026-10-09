@@ -27,7 +27,7 @@ async function submit() {
 <template>
   <div class="login">
     <form @submit.prevent="submit">
-      <h1>Project Admin</h1>
+      <h1>Casiopea</h1>
       <label>Usuario<input v-model="form.username" required autofocus autocomplete="username" /></label>
       <label>Contraseña<input type="password" v-model="form.password" required autocomplete="current-password" /></label>
       <p v-if="error" class="error">{{ error }}</p>

@@ -1,4 +1,4 @@
--- Project Admin: esquema completo (equivale a aplicar las migraciones 001 a 003).
+-- Casiopea: esquema completo (equivale a aplicar las migraciones 001 a 004).
 -- Para una base de datos VACÍA, en MariaDB 10.5+ o MySQL 8.0+. Importar con phpMyAdmin
 -- (Importar) o: mysql -u USUARIO -p NOMBRE_BD < schema.sql
 -- Registra las migraciones como aplicadas, así que bin/migrate.php solo correrá las nuevas.
@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   phase_id INT UNSIGNED NOT NULL,
   title VARCHAR(250) NOT NULL,
   description TEXT NULL,
+  checklist TEXT NULL,
   priority ENUM('low','normal','high','urgent') NOT NULL DEFAULT 'normal',
   assignee_id INT UNSIGNED NULL,
   due_date DATE NULL,
@@ -73,4 +74,5 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 INSERT IGNORE INTO schema_migrations (name) VALUES
   ('001_initial.sql'),
   ('002_users.sql'),
-  ('003_username.sql');
+  ('003_username.sql'),
+  ('004_task_checklist.sql');

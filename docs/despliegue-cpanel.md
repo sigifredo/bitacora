@@ -1,6 +1,6 @@
 # Despliegue en cPanel
 
-Esta guía instala Project Admin en un subdominio (por ejemplo `tareas.tudominio.com`) de un hosting con cPanel. Los archivos necesarios están en `deploy/`:
+Esta guía instala Casiopea en un subdominio (por ejemplo `tareas.tudominio.com`) de un hosting con cPanel. Los archivos necesarios están en `deploy/`:
 
 | Archivo                            | Contenido                                                                             |
 | ---------------------------------- | ------------------------------------------------------------------------------------- |

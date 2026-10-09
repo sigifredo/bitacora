@@ -1,4 +1,4 @@
-# Project Admin
+# Casiopea
 
 PHP 8 (API REST sin dependencias) + Vue 3 (Vite) + MariaDB.
 

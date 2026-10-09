@@ -10,15 +10,25 @@ const emit = defineEmits(['close', 'saved', 'deleted']);
 const form = reactive({
   title: props.task?.title ?? '',
   description: props.task?.description ?? '',
+  checklist: (props.task?.checklist ?? []).map(i => ({ ...i })),
   priority: props.task?.priority ?? 'normal',
   assignee_id: props.task?.assignee_id ?? null,
   due_date: props.task?.due_date ?? '',
   phase_id: props.task?.phase_id ?? props.phaseId ?? props.phases[0]?.id,
 });
 const error = ref('');
+const newItem = ref('');
+
+function addItem() {
+  const text = newItem.value.trim();
+  if (!text) return;
+  form.checklist.push({ text, done: false });
+  newItem.value = '';
+}
 
 async function save() {
   error.value = '';
+  addItem();
   try {
     const saved = props.task
       ? await api.updateTask(props.task.id, form)
@@ -41,6 +51,18 @@ async function remove() {
     <form @submit.prevent="save">
       <label>Título<input v-model="form.title" required maxlength="250" autofocus /></label>
       <label>Descripción<textarea v-model="form.description" rows="5" /></label>
+      <fieldset class="checklist">
+        <legend>Checklist <small v-if="form.checklist.length" class="muted">{{ form.checklist.filter(i => i.done).length }}/{{ form.checklist.length }}</small></legend>
+        <div v-for="(item, i) in form.checklist" :key="i" class="check-item">
+          <input type="checkbox" v-model="item.done" />
+          <input v-model="item.text" maxlength="250" :class="{ done: item.done }" />
+          <button type="button" class="icon" title="Quitar" @click="form.checklist.splice(i, 1)">×</button>
+        </div>
+        <div class="check-item">
+          <input v-model="newItem" maxlength="250" placeholder="Nuevo elemento…" @keydown.enter.prevent="addItem" />
+          <button type="button" @click="addItem">Añadir</button>
+        </div>
+      </fieldset>
       <div class="row">
         <label>Fase
           <select v-model="form.phase_id">

@@ -587,6 +587,9 @@ label {
         @include panel(10px);
         padding: 24px;
     }
+    h1 {
+        text-align: center;
+    }
     button {
         width: 100%;
         margin-top: 4px;
@@ -667,4 +670,29 @@ button.link {
 
 .section-title {
     margin-top: 32px;
+}
+
+.checklist {
+    border: 1px solid var(--line);
+    border-radius: $radius;
+    margin: 0 0 12px;
+    padding: 6px 10px 10px;
+
+    legend {
+        padding: 0 4px;
+    }
+    .check-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 6px;
+
+        input:not([type='checkbox']) {
+            flex: 1;
+        }
+        input.done {
+            text-decoration: line-through;
+            color: var(--muted);
+        }
+    }
 }

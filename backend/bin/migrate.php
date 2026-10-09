@@ -24,7 +24,7 @@ foreach ($files as $file) {
     foreach (array_filter(array_map('trim', explode(';', file_get_contents($file)))) as $statement) {
         $pdo->exec($statement);
     }
-    Db::run('INSERT INTO schema_migrations (name) VALUES (?)', [$name]);
+    Db::run('INSERT IGNORE INTO schema_migrations (name) VALUES (?)', [$name]);
     echo "Aplicada: $name\n";
 }
 echo "Esquema al día.\n";

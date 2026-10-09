@@ -16,22 +16,22 @@ final class TaskController
         $pid = (int) $p['id'];
         ProjectController::find($pid);
         if (empty($_GET['include_children'])) {
-            return Db::all(self::SELECT . ' WHERE t.project_id = ? ORDER BY f.position, t.position', [$pid]);
+            return self::hydrate(Db::all(self::SELECT . ' WHERE t.project_id = ? ORDER BY f.position, t.position', [$pid]));
         }
-        return Db::all(
+        return self::hydrate(Db::all(
             'WITH RECURSIVE tree (id) AS (
                 SELECT id FROM projects WHERE id = ?
                 UNION ALL
                 SELECT c.id FROM projects c JOIN tree ON c.parent_id = tree.id
             ) ' . self::SELECT . ' WHERE t.project_id IN (SELECT id FROM tree) ORDER BY t.project_id, f.position, t.position',
             [$pid]
-        );
+        ));
     }
 
     /** Tareas de todos los proyectos que no están en una fase cerrada, las más antiguas primero. */
     public static function pending(): array
     {
-        return Db::all(self::SELECT . ' WHERE f.is_closed = 0 ORDER BY t.created_at, t.id');
+        return self::hydrate(Db::all(self::SELECT . ' WHERE f.is_closed = 0 ORDER BY t.created_at, t.id'));
     }
 
     public static function store(array $p, array $in): array
@@ -46,9 +46,9 @@ final class TaskController
         self::assertPhaseBelongs($phaseId, $pid);
         $pos = (int) Db::one('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM tasks WHERE phase_id = ?', [$phaseId])['n'];
         Db::run(
-            'INSERT INTO tasks (project_id, phase_id, title, description, priority, assignee_id, due_date, position)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [$pid, $phaseId, Validate::string($in, 'title', true, 250), Validate::string($in, 'description', false, 65000),
+            'INSERT INTO tasks (project_id, phase_id, title, description, checklist, priority, assignee_id, due_date, position)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [$pid, $phaseId, Validate::string($in, 'title', true, 250), Validate::string($in, 'description', false, 65000), self::checklist($in),
                 Validate::enum($in, 'priority', self::PRIORITIES, 'normal'), self::assignee($in), Validate::date($in, 'due_date'), $pos]
         );
         return self::find(Db::insertId());
@@ -66,8 +66,8 @@ final class TaskController
             $pos = (int) $task['position'];
         }
         Db::run(
-            'UPDATE tasks SET phase_id = ?, title = ?, description = ?, priority = ?, assignee_id = ?, due_date = ?, position = ? WHERE id = ?',
-            [$phaseId, Validate::string($in, 'title', true, 250), Validate::string($in, 'description', false, 65000),
+            'UPDATE tasks SET phase_id = ?, title = ?, description = ?, checklist = ?, priority = ?, assignee_id = ?, due_date = ?, position = ? WHERE id = ?',
+            [$phaseId, Validate::string($in, 'title', true, 250), Validate::string($in, 'description', false, 65000), self::checklist($in),
                 Validate::enum($in, 'priority', self::PRIORITIES, 'normal'), self::assignee($in), Validate::date($in, 'due_date'), $pos, $id]
         );
         return self::find($id);
@@ -114,7 +114,36 @@ final class TaskController
         if (!$row) {
             throw new HttpError(404, 'Tarea no encontrada');
         }
-        return $row;
+        return self::hydrate([$row])[0];
+    }
+
+    /** `checklist` se guarda como JSON; la API lo expone como lista de `{text, done}`. */
+    private static function hydrate(array $rows): array
+    {
+        foreach ($rows as &$row) {
+            $row['checklist'] = json_decode((string) ($row['checklist'] ?? ''), true) ?: [];
+        }
+        return $rows;
+    }
+
+    private static function checklist(array $in): ?string
+    {
+        $items = $in['checklist'] ?? [];
+        if (!is_array($items) || count($items) > 100) {
+            throw new HttpError(422, "El campo 'checklist' es inválido");
+        }
+        $clean = [];
+        foreach ($items as $item) {
+            $text = is_array($item) && is_string($item['text'] ?? null) ? trim($item['text']) : '';
+            if ($text === '') {
+                continue;
+            }
+            if (mb_strlen($text) > 250) {
+                throw new HttpError(422, 'Un elemento del checklist supera los 250 caracteres');
+            }
+            $clean[] = ['text' => $text, 'done' => !empty($item['done'])];
+        }
+        return $clean ? json_encode($clean, JSON_UNESCAPED_UNICODE) : null;
     }
 
     private static function assignee(array $in): ?int
