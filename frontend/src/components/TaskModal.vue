@@ -12,7 +12,7 @@ const form = reactive({
   description: props.task?.description ?? '',
   checklist: (props.task?.checklist ?? []).map(i => ({ ...i })),
   priority: props.task?.priority ?? 'normal',
-  assignee_id: props.task?.assignee_id ?? null,
+  assignee_id: props.task ? props.task.assignee_id : auth.user.id, // al crear, el responsable es quien la crea
   due_date: props.task?.due_date ?? '',
   phase_id: props.task?.phase_id ?? props.phaseId ?? props.phases[0]?.id,
 });

@@ -28,10 +28,10 @@ final class TaskController
         ));
     }
 
-    /** Tareas de todos los proyectos que no están en una fase cerrada, las más antiguas primero. */
+    /** Tareas de todos los proyectos que no están en una fase cerrada, por prioridad (urgente primero) y, dentro de cada una, las más antiguas primero. */
     public static function pending(): array
     {
-        return self::hydrate(Db::all(self::SELECT . ' WHERE f.is_closed = 0 ORDER BY t.created_at, t.id'));
+        return self::hydrate(Db::all(self::SELECT . ' WHERE f.is_closed = 0 ORDER BY FIELD(t.priority, \'urgent\', \'high\', \'normal\', \'low\'), t.created_at, t.id'));
     }
 
     public static function store(array $p, array $in): array
@@ -49,7 +49,7 @@ final class TaskController
             'INSERT INTO tasks (project_id, phase_id, title, description, checklist, priority, assignee_id, due_date, position)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [$pid, $phaseId, Validate::string($in, 'title', true, 250), Validate::string($in, 'description', false, 65000), self::checklist($in),
-                Validate::enum($in, 'priority', self::PRIORITIES, 'normal'), self::assignee($in), Validate::date($in, 'due_date'), $pos]
+                Validate::enum($in, 'priority', self::PRIORITIES, 'normal'), self::assignee($in, (int) Auth::require()['id']), Validate::date($in, 'due_date'), $pos]
         );
         return self::find(Db::insertId());
     }
@@ -146,9 +146,10 @@ final class TaskController
         return $clean ? json_encode($clean, JSON_UNESCAPED_UNICODE) : null;
     }
 
-    private static function assignee(array $in): ?int
+    /** Si la petición no trae `assignee_id`, se usa `$default` (al crear: quien crea la tarea). Un `null` explícito deja la tarea sin asignar. */
+    private static function assignee(array $in, ?int $default = null): ?int
     {
-        $id = $in['assignee_id'] ?? null;
+        $id = array_key_exists('assignee_id', $in) ? $in['assignee_id'] : $default;
         if ($id === null || $id === '') {
             return null;
         }

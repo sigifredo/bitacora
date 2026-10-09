@@ -39,5 +39,5 @@ La versión 0.3.0 añade la migración 004.
 
 ## Orden de las consultas de tareas
 
-- `GET /api/tasks/pending` (inicio): `created_at`, `id` ascendente; las más antiguas primero.
+- `GET /api/tasks/pending` (inicio): prioridad (`urgent`, `high`, `normal`, `low`), luego `created_at` y `id` ascendente; las más antiguas primero.
 - `GET /api/projects/{id}/tasks`: orden del tablero, por `phases.position` y `tasks.position` (orden manual con arrastrar y soltar).

@@ -3,6 +3,17 @@
 Todos los cambios relevantes del proyecto se documentan aquí.
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); la versión vigente está en `backend/VERSION`.
 
+## [0.3.2] - 2026-10-09
+
+### Cambiado
+- Las tareas pendientes se ordenan por prioridad (urgente, alta, normal, baja) y, dentro de cada prioridad, por fecha de creación (las más antiguas primero). Es el orden por defecto de `GET /api/tasks/pending` y de la tabla de inicio.
+
+## [0.3.1] - 2026-10-09
+
+### Cambiado
+- Al crear una tarea, el responsable por defecto es quien la crea (se puede cambiar o dejar sin asignar). Si la API recibe una tarea nueva sin `assignee_id`, también se asigna a quien la crea.
+- El título «Casiopea» del formulario de login queda centrado.
+
 ## [0.3.0] - 2026-10-09
 
 ### Añadido

@@ -10,10 +10,11 @@ const loading = ref(true);
 const search = ref('');
 const filterProject = ref('');
 const filterAssignee = ref('');
-const sortKey = ref('created_at');
+const sortKey = ref('priority');
 const sortDir = ref(1);
 
-const PRIO_ORDER = { low: 0, normal: 1, high: 2, urgent: 3 };
+// Ascendente = urgente primero.
+const PRIO_ORDER = { urgent: 0, high: 1, normal: 2, low: 3 };
 const SORTERS = {
   title: (t) => t.title.toLowerCase(),
   project_name: (t) => t.project_name.toLowerCase(),
@@ -58,7 +59,11 @@ const rows = computed(() => {
         (!filterAssignee.value || (filterAssignee.value === 'none' ? !t.assignee_id : t.assignee_id === filterAssignee.value)) &&
         (!q || t.title.toLowerCase().includes(q))
     )
-    .sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * sortDir.value);
+    .sort(
+      (a, b) =>
+        (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * sortDir.value ||
+        (a.created_at > b.created_at ? 1 : a.created_at < b.created_at ? -1 : a.id - b.id)
+    );
 });
 
 function sort(key) {
