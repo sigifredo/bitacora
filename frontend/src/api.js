@@ -42,6 +42,7 @@ export const api = {
 
     tasks: (pid, includeChildren = false) =>
         request('GET', `/api/projects/${pid}/tasks${includeChildren ? '?include_children=1' : ''}`),
+    pendingTasks: () => request('GET', '/api/tasks/pending'),
     createTask: (pid, data) => request('POST', `/api/projects/${pid}/tasks`, data),
     updateTask: (id, data) => request('PUT', `/api/tasks/${id}`, data),
     moveTask: (id, phaseId, index) => request('POST', `/api/tasks/${id}/move`, { phase_id: phaseId, index }),

@@ -39,6 +39,7 @@ $router->add('PUT', '/api/projects/{id}/phases/order', fn ($p, $b) => PhaseContr
 $router->add('PUT', '/api/phases/{id}', fn ($p, $b) => PhaseController::update($p, $b));
 $router->add('DELETE', '/api/phases/{id}', fn ($p, $b) => PhaseController::destroy($p, $b));
 
+$router->add('GET', '/api/tasks/pending', fn ($p, $b) => TaskController::pending());
 $router->add('GET', '/api/projects/{id}/tasks', fn ($p, $b) => TaskController::index($p));
 $router->add('POST', '/api/projects/{id}/tasks', fn ($p, $b) => TaskController::store($p, $b));
 $router->add('PUT', '/api/tasks/{id}', fn ($p, $b) => TaskController::update($p, $b));
