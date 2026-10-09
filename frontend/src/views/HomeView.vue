@@ -10,7 +10,7 @@ const loading = ref(true);
 const search = ref('');
 const filterProject = ref('');
 const filterAssignee = ref('');
-const sortKey = ref('due_date');
+const sortKey = ref('created_at');
 const sortDir = ref(1);
 
 const PRIO_ORDER = { low: 0, normal: 1, high: 2, urgent: 3 };
@@ -20,6 +20,7 @@ const SORTERS = {
   phase_name: (t) => t.phase_name.toLowerCase(),
   assignee: (t) => (t.assignee_name ?? '￿').toLowerCase(),
   priority: (t) => PRIO_ORDER[t.priority],
+  created_at: (t) => t.created_at,
   due_date: (t) => t.due_date ?? '9999-99-99',
 };
 
@@ -94,6 +95,7 @@ const pct = (p) => (p.task_count ? Math.round((p.done_count / p.task_count) * 10
         <th @click="sort('phase_name')">Fase{{ arrow('phase_name') }}</th>
         <th @click="sort('assignee')">Responsable{{ arrow('assignee') }}</th>
         <th @click="sort('priority')">Prioridad{{ arrow('priority') }}</th>
+        <th @click="sort('created_at')">Creada{{ arrow('created_at') }}</th>
         <th @click="sort('due_date')">Fecha límite{{ arrow('due_date') }}</th>
       </tr>
     </thead>
@@ -104,9 +106,10 @@ const pct = (p) => (p.task_count ? Math.round((p.done_count / p.task_count) * 10
         <td><span class="dot" :style="{ background: t.phase_color }" />{{ t.phase_name }}</td>
         <td>{{ t.assignee_name ?? '' }}</td>
         <td><span class="badge" :class="`prio-${t.priority}`">{{ PRIORITY[t.priority] }}</span></td>
+        <td>{{ t.created_at.slice(0, 10) }}</td>
         <td :class="{ overdue: overdue(t) }">{{ t.due_date ?? '' }}</td>
       </tr>
-      <tr v-if="!rows.length"><td colspan="6" class="muted">{{ loading ? 'Cargando…' : 'No hay tareas pendientes.' }}</td></tr>
+      <tr v-if="!rows.length"><td colspan="7" class="muted">{{ loading ? 'Cargando…' : 'No hay tareas pendientes.' }}</td></tr>
     </tbody>
   </table>
 

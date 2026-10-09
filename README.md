@@ -42,4 +42,4 @@ Requisitos de Apache: `mod_rewrite`, `AllowOverride FileInfo` (o `All`) sobre el
 - `phases`: columnas del kanban, propias de cada proyecto (nombre, color, orden, `is_closed`). Un subproyecto hereda una copia de las fases del padre al crearse.
 - `tasks`: pertenecen a un proyecto y a una fase; `position` ordena dentro de la fase.
 - `users`: cuentas con rol `admin` o `member`. Sesión por cookie PHP; las peticiones que modifican datos exigen la cabecera `X-Requested-With: fetch`. `tasks.assignee_id` es el responsable (pasa a NULL si se elimina el usuario).
-- Migraciones en `backend/database/migrations/`, registradas en `schema_migrations`.
+- Migraciones en `backend/database/migrations/`, registradas en `schema_migrations`. Detalle de tablas y reglas en [`docs/base-de-datos.md`](docs/base-de-datos.md).

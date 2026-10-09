@@ -28,10 +28,10 @@ final class TaskController
         );
     }
 
-    /** Tareas de todos los proyectos que no están en una fase cerrada. */
+    /** Tareas de todos los proyectos que no están en una fase cerrada, las más antiguas primero. */
     public static function pending(): array
     {
-        return Db::all(self::SELECT . ' WHERE f.is_closed = 0 ORDER BY t.due_date IS NULL, t.due_date, t.id');
+        return Db::all(self::SELECT . ' WHERE f.is_closed = 0 ORDER BY t.created_at, t.id');
     }
 
     public static function store(array $p, array $in): array
