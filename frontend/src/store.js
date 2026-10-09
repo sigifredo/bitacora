@@ -36,8 +36,8 @@ export const auth = reactive({
         this.ready = true;
         if (this.user) await this.loadData();
     },
-    async login(email, password) {
-        this.user = await api.login(email, password);
+    async login(username, password) {
+        this.user = await api.login(username, password);
         await this.loadData();
     },
     async logout() {

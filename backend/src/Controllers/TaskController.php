@@ -6,7 +6,7 @@ final class TaskController
     private const PRIORITIES = ['low', 'normal', 'high', 'urgent'];
 
     private const SELECT = 'SELECT t.*, p.name AS project_name, f.name AS phase_name, f.color AS phase_color, f.is_closed,
-        u.name AS assignee_name
+        u.username AS assignee_name, u.name AS assignee_full_name
         FROM tasks t JOIN projects p ON p.id = t.project_id JOIN phases f ON f.id = t.phase_id
         LEFT JOIN users u ON u.id = t.assignee_id';
 

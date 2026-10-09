@@ -1,0 +1,12 @@
+# Funciona igual en la raíz de un dominio/subdominio o en una carpeta (las rutas relativas
+# de RewriteRule se resuelven respecto a este directorio). Requiere mod_rewrite y AllowOverride FileInfo.
+DirectoryIndex index.html index.php
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Archivos reales (assets compilados) se sirven tal cual; el resto lo decide index.php.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>

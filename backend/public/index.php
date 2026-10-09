@@ -16,6 +16,7 @@ if (PHP_SAPI === 'cli-server') {
 }
 
 $router = new Router();
+$router->add('GET', '/api/version', fn () => ['version' => trim(file_get_contents($root . '/VERSION'))]);
 $router->add('POST', '/api/auth/login', fn ($p, $b) => Auth::login($b));
 $router->add('POST', '/api/auth/logout', function () { Auth::logout(); });
 $router->add('GET', '/api/auth/me', fn ($p, $b) => Auth::require());
@@ -45,10 +46,32 @@ $router->add('POST', '/api/tasks/{id}/move', fn ($p, $b) => TaskController::move
 $router->add('DELETE', '/api/tasks/{id}', fn ($p, $b) => TaskController::destroy($p));
 
 try {
+    // Prefijo de despliegue: carpeta donde vive este index.php ('' en la raíz del dominio).
+    $base = PHP_SAPI === 'cli-server' ? '' : rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
     $path = rtrim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/') ?: '/';
-    Auth::start();
+    // Con o sin reescritura: /prefijo/api/x o /prefijo/index.php/api/x.
+    $script = PHP_SAPI === 'cli-server' ? '' : $_SERVER['SCRIPT_NAME'];
+    foreach ([$script, $base] as $prefix) {
+        if ($prefix !== '' && str_starts_with($path, $prefix)) {
+            $path = substr($path, strlen($prefix)) ?: '/';
+            break;
+        }
+    }
+
+    // Todo lo que no es API es la SPA (rutas del frontend servidas por history mode).
+    if ($path !== '/api' && !str_starts_with($path, '/api/')) {
+        $index = __DIR__ . '/index.html';
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET' || !is_file($index)) {
+            throw new HttpError(404, 'Ruta no encontrada');
+        }
+        header('Content-Type: text/html; charset=utf-8');
+        readfile($index);
+        return;
+    }
+
+    Auth::start($base);
     Auth::requireCsrfHeader($_SERVER['REQUEST_METHOD']);
-    if ($path !== '/api/auth/login' && $path !== '/api/auth/logout') {
+    if (!in_array($path, ['/api/version', '/api/auth/login', '/api/auth/logout'], true)) {
         Auth::require();
     }
     $router->dispatch($_SERVER['REQUEST_METHOD'], $path);

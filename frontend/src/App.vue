@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 import { auth, store } from './store.js';
 import ProjectTree from './components/ProjectTree.vue';
@@ -9,6 +9,12 @@ import PasswordForm from './components/PasswordForm.vue';
 const router = useRouter();
 const creating = ref(false);
 const changingPassword = ref(false);
+const version = __APP_VERSION__;
+
+// Tras el login el título de la pestaña incluye la versión.
+watchEffect(() => {
+  document.title = auth.user ? `Project Admin v${version}` : 'Project Admin';
+});
 
 async function created(p) {
   creating.value = false;
@@ -25,7 +31,7 @@ async function logout() {
 <template>
   <template v-if="auth.user">
     <aside class="sidebar">
-      <router-link to="/" class="brand">Project Admin</router-link>
+      <router-link to="/" class="brand">Project Admin <small class="version">v{{ version }}</small></router-link>
       <div class="sidebar-head">
         <span>Proyectos</span>
         <button class="icon" title="Nuevo proyecto" @click="creating = true">+</button>
@@ -34,8 +40,8 @@ async function logout() {
       <footer class="sidebar-user">
         <router-link v-if="auth.isAdmin" to="/users" active-class="active">Usuarios</router-link>
         <div class="who">
-          <strong>{{ auth.user.name }}</strong>
-          <small class="muted">{{ auth.user.email }}</small>
+          <strong>{{ auth.user.username }}</strong>
+          <small class="muted">{{ auth.user.name }}</small>
         </div>
         <div class="links">
           <button class="link" @click="changingPassword = true">Contraseña</button>

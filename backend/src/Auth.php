@@ -5,10 +5,10 @@ final class Auth
 {
     private static ?array $user = null;
 
-    public static function start(): void
+    public static function start(string $basePath = ''): void
     {
         session_name('pa_session');
-        session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax', 'path' => '/']);
+        session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax', 'path' => $basePath . '/']);
         session_start();
     }
 
@@ -16,7 +16,7 @@ final class Auth
     public static function user(): ?array
     {
         if (self::$user === null && isset($_SESSION['user_id'])) {
-            $row = Db::one('SELECT id, name, email, role, is_active FROM users WHERE id = ?', [$_SESSION['user_id']]);
+            $row = Db::one('SELECT id, username, name, email, role, is_active FROM users WHERE id = ?', [$_SESSION['user_id']]);
             self::$user = $row && $row['is_active'] ? $row : null;
         }
         return self::$user;
@@ -46,9 +46,10 @@ final class Auth
 
     public static function login(array $in): array
     {
-        $email = strtolower(Validate::string($in, 'email', true, 190));
+        // Se acepta el nombre de usuario o el correo.
+        $login = strtolower(Validate::string($in, 'username', true, 190));
         $password = (string) ($in['password'] ?? '');
-        $row = Db::one('SELECT * FROM users WHERE email = ?', [$email]);
+        $row = Db::one('SELECT * FROM users WHERE username = ? OR email = ?', [$login, $login]);
         // Se verifica siempre un hash para no revelar por tiempo si el correo existe.
         $hash = $row['password_hash'] ?? '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG';
         if (!password_verify($password, $hash) || !$row || !$row['is_active']) {

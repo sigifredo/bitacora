@@ -1,8 +1,11 @@
+// Prefijo de despliegue ('' en la raíz, '/project-admin' en una carpeta). Lo fija VITE_BASE al compilar.
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 let unauthorizedHandler = () => {};
 export const onUnauthorized = (fn) => (unauthorizedHandler = fn);
 
 async function request(method, url, body) {
-    const res = await fetch(url, {
+    const res = await fetch(BASE + url, {
         method,
         headers: { 'X-Requested-With': 'fetch', ...(body ? { 'Content-Type': 'application/json' } : {}) },
         body: body ? JSON.stringify(body) : undefined,
@@ -14,7 +17,7 @@ async function request(method, url, body) {
 }
 
 export const api = {
-    login: (email, password) => request('POST', '/api/auth/login', { email, password }),
+    login: (username, password) => request('POST', '/api/auth/login', { username, password }),
     logout: () => request('POST', '/api/auth/logout'),
     me: () => request('GET', '/api/auth/me'),
     changePassword: (data) => request('PUT', '/api/auth/password', data),

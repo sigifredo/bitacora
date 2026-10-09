@@ -48,7 +48,7 @@ const arrow = (key) => (sortKey.value === key ? (sortDir.value > 0 ? ' ▲' : ' 
     <select v-model="filterAssignee">
       <option value="">Todos los responsables</option>
       <option value="none">Sin asignar</option>
-      <option v-for="u in auth.users" :key="u.id" :value="u.id">{{ u.name }}</option>
+      <option v-for="u in auth.users" :key="u.id" :value="u.id">{{ u.username }}</option>
     </select>
     <span class="muted">{{ rows.length }} tareas</span>
   </div>

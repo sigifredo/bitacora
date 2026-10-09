@@ -57,7 +57,7 @@ async function remove() {
         <label>Responsable
           <select v-model="form.assignee_id">
             <option :value="null">(sin asignar)</option>
-            <option v-for="u in auth.users.filter((x) => x.is_active || x.id === task?.assignee_id)" :key="u.id" :value="u.id">{{ u.name }}</option>
+            <option v-for="u in auth.users.filter((x) => x.is_active || x.id === task?.assignee_id)" :key="u.id" :value="u.id">{{ u.username }}</option>
           </select>
         </label>
         <label>Fecha límite<input type="date" v-model="form.due_date" /></label>

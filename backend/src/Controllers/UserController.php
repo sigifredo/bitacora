@@ -4,13 +4,13 @@ declare(strict_types=1);
 final class UserController
 {
     private const ROLES = ['admin', 'member'];
-    private const COLUMNS = 'id, name, email, role, is_active, created_at';
+    private const COLUMNS = 'id, username, name, email, role, is_active, created_at';
 
     /** Cualquier usuario autenticado puede listar (para asignar tareas); el correo solo lo ve un admin. */
     public static function index(): array
     {
         $isAdmin = Auth::require()['role'] === 'admin';
-        $rows = Db::all('SELECT ' . self::COLUMNS . ' FROM users ORDER BY is_active DESC, name');
+        $rows = Db::all('SELECT ' . self::COLUMNS . ' FROM users ORDER BY is_active DESC, username');
         return $isAdmin ? $rows : array_map(fn ($r) => array_diff_key($r, ['email' => 1, 'created_at' => 1]), $rows);
     }
 
@@ -19,10 +19,10 @@ final class UserController
         Auth::requireAdmin();
         $data = self::validated($in);
         $password = self::password($in, true);
-        self::assertEmailFree($data['email']);
+        self::assertFree($data);
         Db::run(
-            'INSERT INTO users (name, email, password_hash, role, is_active) VALUES (?, ?, ?, ?, ?)',
-            [$data['name'], $data['email'], password_hash($password, PASSWORD_DEFAULT), $data['role'], $data['is_active']]
+            'INSERT INTO users (username, name, email, password_hash, role, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+            [$data['username'], $data['name'], $data['email'], password_hash($password, PASSWORD_DEFAULT), $data['role'], $data['is_active']]
         );
         return self::find(Db::insertId());
     }
@@ -33,14 +33,14 @@ final class UserController
         $id = (int) $p['id'];
         $current = self::find($id);
         $data = self::validated($in);
-        self::assertEmailFree($data['email'], $id);
+        self::assertFree($data, $id);
         if ($id === (int) $me['id'] && ($data['role'] !== 'admin' || !$data['is_active'])) {
             throw new HttpError(422, 'No puedes quitarte el rol de administrador ni desactivarte');
         }
         $password = self::password($in, false);
         Db::run(
-            'UPDATE users SET name = ?, email = ?, role = ?, is_active = ? WHERE id = ?',
-            [$data['name'], $data['email'], $data['role'], $data['is_active'], $id]
+            'UPDATE users SET username = ?, name = ?, email = ?, role = ?, is_active = ? WHERE id = ?',
+            [$data['username'], $data['name'], $data['email'], $data['role'], $data['is_active'], $id]
         );
         if ($password !== null) {
             Db::run('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash($password, PASSWORD_DEFAULT), $id]);
@@ -85,7 +85,12 @@ final class UserController
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new HttpError(422, 'El correo no es válido');
         }
+        $username = strtolower(Validate::string($in, 'username', true, 40));
+        if (!preg_match('/^[a-z0-9._-]{3,40}$/', $username)) {
+            throw new HttpError(422, 'El usuario debe tener 3 a 40 caracteres: letras, números, punto, guion y guion bajo');
+        }
         return [
+            'username' => $username,
             'name' => Validate::string($in, 'name', true, 120),
             'email' => $email,
             'role' => Validate::enum($in, 'role', self::ROLES, 'member'),
@@ -108,9 +113,12 @@ final class UserController
         return $pw;
     }
 
-    private static function assertEmailFree(string $email, int $exceptId = 0): void
+    private static function assertFree(array $data, int $exceptId = 0): void
     {
-        if (Db::one('SELECT id FROM users WHERE email = ? AND id <> ?', [$email, $exceptId])) {
+        if (Db::one('SELECT id FROM users WHERE username = ? AND id <> ?', [$data['username'], $exceptId])) {
+            throw new HttpError(422, 'Ya existe un usuario con ese nombre de usuario');
+        }
+        if (Db::one('SELECT id FROM users WHERE email = ? AND id <> ?', [$data['email'], $exceptId])) {
             throw new HttpError(422, 'Ya existe un usuario con ese correo');
         }
     }

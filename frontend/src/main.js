@@ -9,7 +9,7 @@ import { auth } from './store.js';
 import './style.scss';
 
 const router = createRouter({
-    history: createWebHistory(),
+    history: createWebHistory(import.meta.env.BASE_URL),
     routes: [
         { path: '/login', component: LoginView, meta: { public: true } },
         { path: '/', component: HomeView },

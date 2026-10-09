@@ -9,7 +9,7 @@ Gestor de proyectos personales (tipo OpenProject): proyectos con subproyectos il
 ```bash
 # Backend (desde la raíz). Configuración en backend/.env (plantilla: backend/.env.example)
 php backend/bin/migrate.php                       # aplica migraciones pendientes
-php backend/bin/create-user.php <email> <nombre> [admin|member] [contraseña]
+php backend/bin/create-user.php <usuario> <email> <nombre completo> [admin|member] [contraseña]
 php -S 127.0.0.1:8000 -t backend/public backend/public/index.php
 
 # Frontend (pnpm, no npm)
@@ -41,6 +41,8 @@ Modelo de datos y reglas que cruzan archivos:
 **Frontend** (`frontend/src/`): SPA con `vue-router`; no hay Pinia. `store.js` exporta dos objetos `reactive` globales: `store` (lista plana de proyectos con helpers `children`/`path`/`byId`, de la que sale el árbol de la barra lateral) y `auth` (usuario actual, lista de usuarios, carga inicial tras login). `api.js` es el único punto de `fetch`; un 401 dispara `onUnauthorized` y `main.js` redirige a `/login`. El guard de rutas en `main.js` carga la sesión una vez (`auth.init`) y protege `/users` con `meta.admin`.
 
 `views/ProjectView.vue` orquesta el proyecto: carga fases y tareas, alterna entre `BoardView` (kanban con drag and drop HTML5 nativo), `TableView` (orden, filtros) y `PhasesSettings`, y abre los modales. Las tareas de un subproyecto vistas desde la tabla del padre se editan navegando a ese subproyecto (cada uno tiene sus propias fases).
+
+Despliegue en raíz o subcarpeta: el frontend toma el prefijo de `VITE_BASE` en el build (`import.meta.env.BASE_URL` alimenta `createWebHistory` y `api.js`); `backend/public/.htaccess` envía todo lo que no sea archivo a `index.php`, que deduce el prefijo de `SCRIPT_NAME`, atiende `/api/*` y sirve `index.html` (copiado del `dist`) para el resto. Un `fetch` o enlace nuevo debe pasar por `BASE_URL`, nunca con `/` absoluto fuera de `api.js`.
 
 Estilos en un único `style.scss`; los colores son propiedades CSS (`--bg`, `--accent`…) con modo oscuro por `prefers-color-scheme`, no variables Sass.
 

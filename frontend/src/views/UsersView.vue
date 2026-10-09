@@ -5,11 +5,11 @@ import { api } from '../api.js';
 import { ROLE, auth } from '../store.js';
 
 const editing = ref(null); // null | {} (nuevo) | usuario existente
-const form = reactive({ name: '', email: '', role: 'member', is_active: true, password: '' });
+const form = reactive({ username: '', name: '', email: '', role: 'member', is_active: true, password: '' });
 const error = ref('');
 
 function open(user = {}) {
-  Object.assign(form, { name: '', email: '', role: 'member', password: '' }, user, { password: '' });
+  Object.assign(form, { username: '', name: '', email: '', role: 'member', password: '' }, user, { password: '' });
   form.is_active = user.id ? !!user.is_active : true;
   error.value = '';
   editing.value = user;
@@ -27,7 +27,7 @@ async function save() {
 }
 
 async function remove(u) {
-  if (!confirm(`¿Eliminar a ${u.name}? Sus tareas quedarán sin responsable.`)) return;
+  if (!confirm(`¿Eliminar a ${u.username}? Sus tareas quedarán sin responsable.`)) return;
   try {
     await api.deleteUser(u.id);
     await auth.refreshUsers();
@@ -43,10 +43,11 @@ async function remove(u) {
     <div class="actions"><button class="primary" @click="open()">+ Usuario</button></div>
   </header>
   <table class="grid">
-    <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th /></tr></thead>
+    <thead><tr><th>Usuario</th><th>Nombre completo</th><th>Correo</th><th>Rol</th><th>Estado</th><th /></tr></thead>
     <tbody>
       <tr v-for="u in auth.users" :key="u.id" :class="{ inactive: !u.is_active }" @click="open(u)">
-        <td>{{ u.name }} <span v-if="u.id === auth.user.id" class="muted">(tú)</span></td>
+        <td>{{ u.username }} <span v-if="u.id === auth.user.id" class="muted">(tú)</span></td>
+        <td>{{ u.name }}</td>
         <td>{{ u.email }}</td>
         <td>{{ ROLE[u.role] }}</td>
         <td>{{ u.is_active ? 'Activo' : 'Inactivo' }}</td>
@@ -57,7 +58,8 @@ async function remove(u) {
 
   <Modal v-if="editing" :title="editing.id ? 'Editar usuario' : 'Nuevo usuario'" @close="editing = null">
     <form @submit.prevent="save">
-      <label>Nombre<input v-model="form.name" required maxlength="120" autofocus /></label>
+      <label>Usuario<input v-model="form.username" required minlength="3" maxlength="40" pattern="[A-Za-z0-9._\-]+" autocapitalize="none" autofocus /></label>
+      <label>Nombre completo<input v-model="form.name" required maxlength="120" /></label>
       <label>Correo<input type="email" v-model="form.email" required /></label>
       <div class="row">
         <label>Rol
