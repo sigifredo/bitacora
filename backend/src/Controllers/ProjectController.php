@@ -12,15 +12,43 @@ final class ProjectController
         ['Hecho', '#22c55e', 1],
     ];
 
-    private const SELECT = 'SELECT p.*,
-        (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id) AS task_count,
-        (SELECT COUNT(*) FROM tasks t JOIN phases f ON f.id = t.phase_id
-          WHERE t.project_id = p.id AND f.is_closed = 1) AS done_count
-        FROM projects p';
+    /**
+     * `task_count`/`done_count` cuentan solo las tareas directas del proyecto; `total_*` incluyen las de todos sus
+     * descendientes. `tree` es la clausura (raíz, descendiente) del árbol de proyectos.
+     */
+    private const SELECT_TEMPLATE = 'WITH RECURSIVE tree (root_id, id) AS (
+            SELECT id, id FROM projects %s
+            UNION ALL
+            SELECT tree.root_id, c.id FROM projects c JOIN tree ON c.parent_id = tree.id
+        ),
+        agg (root_id, task_count, done_count, total_task_count, total_done_count) AS (
+            SELECT tree.root_id,
+                COUNT(CASE WHEN tree.id = tree.root_id THEN 1 END),
+                COUNT(CASE WHEN tree.id = tree.root_id AND f.is_closed = 1 THEN 1 END),
+                COUNT(*),
+                COUNT(CASE WHEN f.is_closed = 1 THEN 1 END)
+            FROM tree
+            JOIN tasks t ON t.project_id = tree.id
+            JOIN phases f ON f.id = t.phase_id
+            GROUP BY tree.root_id
+        )
+        SELECT p.*,
+            COALESCE(agg.task_count, 0) AS task_count,
+            COALESCE(agg.done_count, 0) AS done_count,
+            COALESCE(agg.total_task_count, 0) AS total_task_count,
+            COALESCE(agg.total_done_count, 0) AS total_done_count
+        FROM projects p
+        LEFT JOIN agg ON agg.root_id = p.id';
+
+    /** Con `$single` el CTE parte solo del proyecto pedido (dos parámetros `id`) en lugar de todo el árbol. */
+    private static function select(bool $single = false): string
+    {
+        return sprintf(self::SELECT_TEMPLATE, $single ? 'WHERE id = ?' : '') . ($single ? ' WHERE p.id = ?' : '');
+    }
 
     public static function index(): array
     {
-        return Db::all(self::SELECT . ' ORDER BY p.parent_id, p.position, p.name');
+        return Db::all(self::select() . ' ORDER BY p.parent_id, p.position, p.name');
     }
 
     public static function show(array $p): array
@@ -85,7 +113,7 @@ final class ProjectController
 
     public static function find(int $id): array
     {
-        $row = Db::one(self::SELECT . ' WHERE p.id = ?', [$id]);
+        $row = Db::one(self::select(true), [$id, $id]);
         if (!$row) {
             throw new HttpError(404, 'Proyecto no encontrado');
         }

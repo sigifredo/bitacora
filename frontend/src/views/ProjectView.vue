@@ -15,7 +15,8 @@
                 <p class="muted">
                     <span v-if="project.start_date">Inicio {{ project.start_date }} · </span>
                     <span v-if="project.due_date">Límite {{ project.due_date }} · </span>
-                    {{ project.done_count }}/{{ project.task_count }} tareas ({{ pct }}%)
+                    {{ project.total_done_count }}/{{ project.total_task_count }} tareas ({{ pct }}%)
+                    <span v-if="children.length">· propias {{ project.done_count }}/{{ project.task_count }}</span>
                 </p>
             </div>
             <div class="actions">
@@ -28,7 +29,7 @@
         <div v-if="children.length" class="chips">
             <span class="muted">Subproyectos:</span>
             <router-link v-for="c in children" :key="c.id" :to="`/projects/${c.id}`" class="chip">
-                {{ c.name }} <small>{{ c.done_count }}/{{ c.task_count }}</small>
+                {{ c.name }} <small>{{ c.total_done_count }}/{{ c.total_task_count }}</small>
             </router-link>
         </div>
 
@@ -80,7 +81,7 @@ const project = computed(() => store.byId(pid.value));
 const children = computed(() => store.children(pid.value));
 const view = computed(() => (['board', 'table', 'phases'].includes(route.query.view) ? route.query.view : 'board'));
 const crumbs = computed(() => store.path(pid.value).slice(0, -1));
-const pct = computed(() => (project.value?.task_count ? Math.round((project.value.done_count / project.value.task_count) * 100) : 0));
+const pct = computed(() => (project.value?.total_task_count ? Math.round((project.value.total_done_count / project.value.total_task_count) * 100) : 0));
 
 // Las tareas de un subproyecto usan sus propias fases: se abren en el contexto de ese subproyecto.
 function openTask(t) {

@@ -34,7 +34,7 @@ Modelo de datos y reglas que cruzan archivos:
 
 - `projects` es un árbol por `parent_id` con `ON DELETE CASCADE`: borrar un proyecto elimina subproyectos, fases y tareas. `ProjectController::update` impide ciclos.
 - **Las fases son por proyecto, no globales.** Al crear un subproyecto se copian las fases del padre (`seedPhases`); un proyecto raíz recibe las predeterminadas. Una tarea solo puede estar en una fase de su propio proyecto (`assertPhaseBelongs`).
-- Fase con `is_closed = 1` cuenta como trabajo terminado: de ahí salen `done_count`/progreso en `ProjectController::SELECT`.
+- Fase con `is_closed = 1` cuenta como trabajo terminado: de ahí salen `done_count`/`task_count` (tareas directas) y `total_done_count`/`total_task_count` (incluye descendientes, vía CTE recursivo) en `ProjectController::SELECT`. La interfaz muestra el progreso total.
 - Borrar una fase con tareas exige `?move_to=<fase>` (el controlador renumera `position` en el destino); un proyecto nunca puede quedarse sin fases.
 - El orden es explícito con enteros `position` (tareas dentro de su fase, fases dentro del proyecto). `POST /api/tasks/{id}/move` recibe `phase_id` e `index` y renumera toda la fase destino en una transacción.
 - `GET /api/projects/{id}/tasks?include_children=1` usa un CTE recursivo para traer las tareas de todos los descendientes.

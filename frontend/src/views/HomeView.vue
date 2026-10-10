@@ -53,7 +53,7 @@
             <span class="badge">{{ STATUS[p.status] }}</span>
             <p class="muted">{{ p.description || 'Sin descripción' }}</p>
             <div class="progress"><div :style="{ width: pct(p) + '%' }" /></div>
-            <small class="muted">{{ p.done_count }}/{{ p.task_count }} tareas · {{ store.children(p.id).length }} subproyectos</small>
+            <small class="muted">{{ p.total_done_count }}/{{ p.total_task_count }} tareas · {{ store.children(p.id).length }} subproyectos</small>
         </router-link>
     </div>
 </template>
@@ -123,5 +123,5 @@ const arrow = key => (sortKey.value === key ? (sortDir.value > 0 ? ' ▲' : ' �
 const overdue = t => t.due_date && t.due_date < new Date().toISOString().slice(0, 10);
 
 const roots = computed(() => store.children(null));
-const pct = p => (p.task_count ? Math.round((p.done_count / p.task_count) * 100) : 0);
+const pct = p => (p.total_task_count ? Math.round((p.total_done_count / p.total_task_count) * 100) : 0);
 </script>
