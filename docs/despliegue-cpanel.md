@@ -141,7 +141,9 @@ Los errores de PHP quedan en `error_log`, dentro de `casiopea/public/` o en **Er
 1. Haz una copia de seguridad de la base de datos en **Copia de seguridad** o con phpMyAdmin (**Exportar**).
 2. Sube y extrae el nuevo zip del backend sobre `casiopea/`, sin tocar `.env`. El zip no lo incluye, así que no se sobrescribe.
 3. Sube y extrae el nuevo zip del frontend en `casiopea/public/`. Los archivos de `assets/` cambian de nombre con cada build, así que conviene borrar antes la carpeta `assets/` vieja.
-4. Ejecuta de nuevo `bin/migrate.php` (paso 8): solo aplica las migraciones nuevas.
+4. Actualiza la base de datos de una de estas dos formas:
+   - Con Terminal: ejecuta de nuevo `bin/migrate.php` (paso 8). Solo aplica las migraciones nuevas.
+   - Sin Terminal: en **phpMyAdmin** selecciona la base de Casiopea, ve a **Importar** y sube `database/upgrade-0.4.0-a-0.5.0.sql` (está en el zip del backend). Lleva una base de la versión 0.4.0 a la 0.5.0 conservando los datos. Se puede ejecutar más de una vez sin efectos y registra las migraciones como aplicadas.
 5. Comprueba `/api/version`.
 
 Al pasar a una versión que añade `users.session_version` (migración 006), las sesiones abiertas dejan de ser válidas una vez: los usuarios deben volver a iniciar sesión. Opcionalmente, el `.env` admite `SESSION_LIFETIME` (segundos de vigencia de la sesión), `LOGIN_MAX_PER_LOGIN` y `LOGIN_MAX_PER_IP` (ver `.env.example`).

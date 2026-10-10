@@ -1,6 +1,11 @@
 <template>
     <template v-if="auth.user">
-        <aside class="sidebar">
+        <header class="topbar">
+            <button class="icon" :aria-expanded="menuOpen" aria-controls="sidebar" aria-label="Abrir menú" @click="menuOpen = !menuOpen">☰</button>
+            <router-link to="/" class="brand"><img :src="logo" alt="" />casiopea</router-link>
+        </header>
+        <div v-if="menuOpen" class="sidebar-backdrop" @click="menuOpen = false" />
+        <aside id="sidebar" class="sidebar" :class="{ open: menuOpen }">
             <router-link to="/" class="brand">
                 <img :src="logo" alt="" />
                 casiopea <small class="version">v{{ version }}</small></router-link
@@ -8,7 +13,7 @@
             <router-link to="/" exact-active-class="active" class="nav-pending">Tareas pendientes</router-link>
             <div class="sidebar-head">
                 <span>Proyectos</span>
-                <button class="icon" aria-label="Nuevo proyecto" title="Nuevo proyecto" @click="creating = true">+</button>
+                <button class="icon" aria-label="Nuevo proyecto" title="Nuevo proyecto" @click="(creating = true), (menuOpen = false)">+</button>
             </div>
             <ProjectTree :parent-id="null" />
             <footer class="sidebar-user">
@@ -18,7 +23,7 @@
                     <small class="muted">{{ auth.user.name }}</small>
                 </div>
                 <div class="links">
-                    <button class="link" @click="changingPassword = true">Contraseña</button>
+                    <button class="link" @click="(changingPassword = true), (menuOpen = false)">Contraseña</button>
                     <button class="link" @click="logout">Salir</button>
                 </div>
             </footer>
@@ -31,14 +36,16 @@
 </template>
 
 <script setup>
-import { ref, watchEffect } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, watch, watchEffect } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { auth, store } from './store.js';
 import ProjectTree from './components/ProjectTree.vue';
 import ProjectForm from './components/ProjectForm.vue';
 import PasswordForm from './components/PasswordForm.vue';
 
 const router = useRouter();
+const route = useRoute();
+const menuOpen = ref(false); // solo se ve en pantallas estrechas (la barra lateral es un cajón)
 const creating = ref(false);
 const changingPassword = ref(false);
 const version = __APP_VERSION__;
@@ -48,6 +55,9 @@ const logo = `${import.meta.env.BASE_URL}logo.svg`;
 watchEffect(() => {
     document.title = auth.user ? `Casiopea v${version}` : 'Casiopea';
 });
+
+// Navegar o abrir un modal desde el cajón lo cierra.
+watch(() => route.fullPath, () => (menuOpen.value = false));
 
 async function created(p) {
     creating.value = false;

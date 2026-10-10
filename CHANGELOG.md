@@ -3,6 +3,17 @@
 Todos los cambios relevantes del proyecto se documentan aquí.
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); la versión vigente está en `backend/VERSION`.
 
+## [0.6.0] - 2026-10-10
+
+### Añadido
+
+- Diseño adaptable (solo frontend): hasta 860 px la barra lateral pasa a ser un cajón que se abre desde una barra superior con el botón ☰ y se cierra al navegar, al pulsar el fondo o al abrir un modal; cerrado no recibe foco de teclado.
+- Hasta 600 px: campos a 16 px (evita el zoom automático de iOS) y botones de 36 px de alto; cabecera, pestañas y filtros se reparten en varias líneas; el tablero muestra una columna casi a ancho completo con ajuste del desplazamiento horizontal; las tablas se desplazan en horizontal en lugar de desbordar la página; la portada usa una columna; las filas de configuración de fases se parten; los modales ocupan toda la pantalla y apilan sus campos.
+
+### Notas de actualización
+
+- Sin cambios de backend ni de esquema: no hay migraciones nuevas. La versión se sube porque `backend/VERSION` es la única fuente que también usa el frontend.
+
 ## [0.5.0] - 2026-10-10
 
 ### Añadido
