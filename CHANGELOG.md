@@ -3,6 +3,18 @@
 Todos los cambios relevantes del proyecto se documentan aquí.
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); la versión vigente está en `backend/VERSION`.
 
+## [0.3.3] - 2026-10-10
+
+### Añadido
+
+- Logo de la tortuga como favicon, en la barra lateral y en la pantalla de login (`frontend/public/logo.svg`).
+
+### Cambiado
+
+- Los componentes Vue del frontend se reformatean y reorganizan (indentación de 4 espacios, comillas simples, atributos en varias líneas) y el paquete del frontend pasa a llamarse `casiopea-frontend`.
+- Los identificadores técnicos pasan a llamarse como la aplicación: base de datos `casiopea_db`, usuario de base de datos `casiopea`, carpeta de despliegue `casiopea/` y zips `casiopea-backend-*.zip` / `casiopea-frontend-*.zip`. Quien tenga una instalación con los nombres anteriores debe actualizar `DB_NAME` y `DB_USER` en su `.env` o mantener los valores antiguos.
+- Documentación: la guía de cPanel usa `database/schema.sql` para instalar en una base vacía (el `instalar-esquema.sql` anterior no incluía la migración 004), explica cómo generar los zips y actualiza las versiones de ejemplo; `docs/base-de-datos.md` y el README describen los dos caminos de creación del esquema (migraciones o `schema.sql`).
+
 ## [0.3.2] - 2026-10-09
 
 ### Cambiado

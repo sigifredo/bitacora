@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Gestor de proyectos personales (tipo OpenProject): proyectos con subproyectos ilimitados, tareas, fases de kanban configurables, vistas tablero y tabla, usuarios con roles. PHP 8.4 sin dependencias (sin Composer) + Vue 3/Vite/SCSS + MariaDB. La documentación de usuario y los textos de la interfaz están en español.
+Casiopea: gestor de proyectos personales (tipo OpenProject): proyectos con subproyectos ilimitados, tareas, fases de kanban configurables, vistas tablero y tabla, usuarios con roles. PHP 8.4 sin dependencias (sin Composer) + Vue 3/Vite/SCSS + MariaDB. La documentación de usuario y los textos de la interfaz están en español.
 
 ## Comandos
 
@@ -28,7 +28,7 @@ pnpm 11 bloquea scripts de instalación: los builds permitidos (`esbuild`, `@par
 
 Autenticación (`src/Auth.php`): sesión PHP por cookie. En `index.php`, toda ruta salvo login/logout pasa por `Auth::require()`, y toda petición no GET exige la cabecera `X-Requested-With: fetch` (defensa CSRF; el frontend la envía en `api.js`). Los permisos de admin se comprueban dentro de cada controlador con `Auth::requireAdmin()`. No existe pertenencia de usuarios a proyectos: cualquier usuario autenticado ve y edita todo.
 
-Esquema por migraciones numeradas en `database/migrations/*.sql`, registradas en `schema_migrations`; `migrate.php` separa sentencias por `;` (no usar `;` dentro de literales). Las migraciones deben ser idempotentes (`IF NOT EXISTS`) porque la primera se aplicó sobre una base ya existente.
+Esquema por migraciones numeradas en `database/migrations/*.sql`, registradas en `schema_migrations`; `migrate.php` separa sentencias por `;` (no usar `;` dentro de literales). Las migraciones deben ser idempotentes (`IF NOT EXISTS`) porque la primera se aplicó sobre una base ya existente. `database/schema.sql` es el esquema completo para bases vacías (producción) y registra las migraciones como aplicadas: cada migración nueva debe reflejarse también ahí y en `CHANGELOG.md`.
 
 Modelo de datos y reglas que cruzan archivos:
 

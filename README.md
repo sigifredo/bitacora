@@ -13,7 +13,7 @@ sudo mariadb -e "CREATE DATABASE casiopea_db CHARACTER SET utf8mb4 COLLATE utf8m
   CREATE USER 'casiopea'@'localhost' IDENTIFIED BY 'cambiar';
   GRANT ALL ON casiopea_db.* TO 'casiopea'@'localhost';"
 cp backend/.env.example backend/.env   # ajustar DB_PASS
-php backend/bin/migrate.php
+php backend/bin/migrate.php            # o, en una base vacía: mariadb casiopea_db < backend/database/schema.sql
 php backend/bin/create-user.php tuusuario tu@correo.com "Tu nombre completo" admin   # imprime la contraseña generada
 
 # 3. API (puerto 8000) y frontend (puerto 5173, proxy /api)
@@ -42,4 +42,9 @@ Requisitos de Apache: `mod_rewrite`, `AllowOverride FileInfo` (o `All`) sobre el
 - `phases`: columnas del kanban, propias de cada proyecto (nombre, color, orden, `is_closed`). Un subproyecto hereda una copia de las fases del padre al crearse.
 - `tasks`: pertenecen a un proyecto y a una fase; `position` ordena dentro de la fase.
 - `users`: cuentas con rol `admin` o `member`. Sesión por cookie PHP; las peticiones que modifican datos exigen la cabecera `X-Requested-With: fetch`. `tasks.assignee_id` es el responsable (pasa a NULL si se elimina el usuario).
-- Migraciones en `backend/database/migrations/`, registradas en `schema_migrations`. Detalle de tablas y reglas en [`docs/base-de-datos.md`](docs/base-de-datos.md).
+- Migraciones en `backend/database/migrations/`, registradas en `schema_migrations`; `backend/database/schema.sql` crea el esquema completo en una base vacía. Detalle de tablas y reglas en [`docs/base-de-datos.md`](docs/base-de-datos.md).
+
+## Más documentación
+
+- [`docs/despliegue-cpanel.md`](docs/despliegue-cpanel.md): instalación en un hosting con cPanel y generación de los zips de despliegue.
+- [`CHANGELOG.md`](CHANGELOG.md): historial de versiones (la vigente está en `backend/VERSION`).

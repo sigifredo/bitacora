@@ -4,14 +4,14 @@ MariaDB 10.5+ (o MySQL 8.0+ con la salvedad de abajo), `utf8mb4` / `utf8mb4_unic
 
 ## Cómo se crea
 
-El esquema se define **solo** con las migraciones numeradas de `backend/database/migrations/`:
+Hay dos caminos equivalentes. Una base existente se actualiza con las migraciones numeradas de `backend/database/migrations/`; una base vacía puede crearse de una vez con `backend/database/schema.sql` (ver más abajo). Antes de ambos hay que crear la base y su usuario (ver el README):
 
-| Archivo            | Contenido                                                                 |
-| ------------------ | ------------------------------------------------------------------------- |
-| `001_initial.sql`  | Tablas `projects`, `phases` y `tasks`                                     |
-| `002_users.sql`    | Tabla `users` y `tasks.assignee_id` (responsable)                         |
-| `003_username.sql` | `users.username` (único), con relleno para usuarios existentes            |
-| `004_task_checklist.sql` | `tasks.checklist`: JSON con `[{"text", "done"}]`                    |
+| Archivo                  | Contenido                                                      |
+| ------------------------ | -------------------------------------------------------------- |
+| `001_initial.sql`        | Tablas `projects`, `phases` y `tasks`                          |
+| `002_users.sql`          | Tabla `users` y `tasks.assignee_id` (responsable)              |
+| `003_username.sql`       | `users.username` (único), con relleno para usuarios existentes |
+| `004_task_checklist.sql` | `tasks.checklist`: JSON con `[{"text", "done"}]`               |
 
 ```bash
 php backend/bin/migrate.php   # aplica en orden las pendientes y las registra en schema_migrations
@@ -26,8 +26,6 @@ Reglas para escribir migraciones nuevas:
 - `migrate.php` separa sentencias por `;`: no usar `;` dentro de literales.
 - `ADD COLUMN IF NOT EXISTS` y similares son solo de MariaDB. Las migraciones desde la 004 se escriben compatibles con ambos (comprobando `information_schema` con `PREPARE`/`EXECUTE`) y terminan con su propio `INSERT IGNORE INTO schema_migrations`, para poder pegarlas tal cual en phpMyAdmin con MySQL. Las 002 y 003 siguen siendo solo MariaDB: con MySQL se parte de `schema.sql`.
 - Cada migración nueva se refleja también en `schema.sql` (tablas y `INSERT IGNORE` en `schema_migrations`) y se anota en `CHANGELOG.md`.
-
-La versión 0.3.0 añade la migración 004.
 
 ## Tablas
 
