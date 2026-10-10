@@ -9,11 +9,11 @@ PHP 8 (API REST sin dependencias) + Vue 3 (Vite) + MariaDB.
 sudo apt install php8.4-mysql php8.4-mbstring
 
 # 2. Base de datos
-sudo mariadb -e "CREATE DATABASE project_admin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-  CREATE USER 'project_admin'@'localhost' IDENTIFIED BY 'cambiar';
-  GRANT ALL ON project_admin.* TO 'project_admin'@'localhost';"
+sudo mariadb -e "CREATE DATABASE casiopea_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+  CREATE USER 'casiopea'@'localhost' IDENTIFIED BY 'cambiar';
+  GRANT ALL ON casiopea_db.* TO 'casiopea'@'localhost';"
 cp backend/.env.example backend/.env   # ajustar DB_PASS
-php backend/bin/migrate.php
+php backend/bin/migrate.php            # o, en una base vacía: mariadb casiopea_db < backend/database/schema.sql
 php backend/bin/create-user.php tuusuario tu@correo.com "Tu nombre completo" admin   # imprime la contraseña generada
 
 # 3. API (puerto 8000) y frontend (puerto 5173, proxy /api)
@@ -28,8 +28,8 @@ El mismo build sirve en la raíz de un dominio o subdominio y en una carpeta. Ap
 ```bash
 # Raíz de dominio/subdominio
 cd frontend && pnpm build
-# Carpeta (p. ej. https://host/project-admin/): el prefijo se fija al compilar
-cd frontend && VITE_BASE=/project-admin/ pnpm build
+# Carpeta (p. ej. https://host/casiopea/): el prefijo se fija al compilar
+cd frontend && VITE_BASE=/casiopea/ pnpm build
 
 cp -r frontend/dist/* backend/public/      # junto a index.php y .htaccess
 ```
@@ -42,4 +42,9 @@ Requisitos de Apache: `mod_rewrite`, `AllowOverride FileInfo` (o `All`) sobre el
 - `phases`: columnas del kanban, propias de cada proyecto (nombre, color, orden, `is_closed`). Un subproyecto hereda una copia de las fases del padre al crearse.
 - `tasks`: pertenecen a un proyecto y a una fase; `position` ordena dentro de la fase.
 - `users`: cuentas con rol `admin` o `member`. Sesión por cookie PHP; las peticiones que modifican datos exigen la cabecera `X-Requested-With: fetch`. `tasks.assignee_id` es el responsable (pasa a NULL si se elimina el usuario).
-- Migraciones en `backend/database/migrations/`, registradas en `schema_migrations`. Detalle de tablas y reglas en [`docs/base-de-datos.md`](docs/base-de-datos.md).
+- Migraciones en `backend/database/migrations/`, registradas en `schema_migrations`; `backend/database/schema.sql` crea el esquema completo en una base vacía. Detalle de tablas y reglas en [`docs/base-de-datos.md`](docs/base-de-datos.md).
+
+## Más documentación
+
+- [`docs/despliegue-cpanel.md`](docs/despliegue-cpanel.md): instalación en un hosting con cPanel y generación de los zips de despliegue.
+- [`CHANGELOG.md`](CHANGELOG.md): historial de versiones (la vigente está en `backend/VERSION`).

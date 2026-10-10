@@ -1,8 +1,9 @@
 <template>
     <template v-if="auth.user">
         <aside class="sidebar">
-            <router-link to="/" class="brand"
-                ><img :src="logo" alt="" />Casiopea <small class="version">v{{ version }}</small></router-link
+            <router-link to="/" class="brand">
+                <img :src="logo" alt="" />
+                casiopea <small class="version">v{{ version }}</small></router-link
             >
             <router-link to="/" exact-active-class="active" class="nav-pending">Tareas pendientes</router-link>
             <div class="sidebar-head">

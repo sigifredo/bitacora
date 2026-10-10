@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 const version = readFileSync(new URL('../backend/VERSION', import.meta.url), 'utf8').trim();
 
 export default defineConfig({
-    // Ruta de despliegue, p. ej. VITE_BASE=/project-admin/ pnpm build. Por defecto, la raíz.
+    // Ruta de despliegue, p. ej. VITE_BASE=/casiopea/ pnpm build. Por defecto, la raíz.
     base: process.env.VITE_BASE || '/',
     plugins: [vue()],
     define: { __APP_VERSION__: JSON.stringify(version) },
@@ -17,7 +17,7 @@ export default defineConfig({
             '/api': {
                 target: process.env.API_TARGET || 'http://localhost',
                 changeOrigin: true,
-                rewrite: path => (process.env.API_PREFIX ?? '/project-admin/index.php') + path,
+                rewrite: path => (process.env.API_PREFIX ?? '/casiopea/index.php') + path,
                 cookiePathRewrite: { '*': '/' },
             },
         },

@@ -1,4 +1,4 @@
-// Prefijo de despliegue ('' en la raíz, '/project-admin' en una carpeta). Lo fija VITE_BASE al compilar.
+// Prefijo de despliegue ('' en la raíz, '/casiopea' en una carpeta). Lo fija VITE_BASE al compilar.
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 let unauthorizedHandler = () => { };
