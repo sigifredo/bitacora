@@ -15,7 +15,7 @@ final class TaskController
     {
         $pid = (int) $p['id'];
         ProjectController::find($pid);
-        if (empty($_GET['include_children'])) {
+        if (!Router::query('include_children')) {
             return self::hydrate(Db::all(self::SELECT . ' WHERE t.project_id = ? ORDER BY f.position, t.position', [$pid]));
         }
         return self::hydrate(Db::all(
@@ -43,33 +43,45 @@ final class TaskController
             $first = Db::one('SELECT id FROM phases WHERE project_id = ? ORDER BY position LIMIT 1', [$pid]);
             $phaseId = (int) $first['id'];
         }
-        self::assertPhaseBelongs($phaseId, $pid);
-        $pos = (int) Db::one('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM tasks WHERE phase_id = ?', [$phaseId])['n'];
-        Db::run(
-            'INSERT INTO tasks (project_id, phase_id, title, description, checklist, priority, assignee_id, due_date, position)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [$pid, $phaseId, Validate::string($in, 'title', true, 250), Validate::string($in, 'description', false, 65000), self::checklist($in),
-                Validate::enum($in, 'priority', self::PRIORITIES, 'normal'), self::assignee($in, (int) Auth::require()['id']), Validate::date($in, 'due_date'), $pos]
-        );
-        return self::find(Db::insertId());
+        $data = [
+            Validate::string($in, 'title', true, 250), Validate::string($in, 'description', false, 65000), self::checklist($in),
+            Validate::enum($in, 'priority', self::PRIORITIES, 'normal'), self::assignee($in, (int) Auth::require()['id']), Validate::date($in, 'due_date'),
+        ];
+        $id = Db::transaction(function () use ($pid, $phaseId, $data) {
+            self::lockPhase($phaseId, $pid);
+            Db::run(
+                'INSERT INTO tasks (project_id, phase_id, title, description, checklist, priority, assignee_id, due_date, position)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [$pid, $phaseId, ...$data, Db::nextPosition('tasks', 'phase_id = ?', [$phaseId])]
+            );
+            return Db::insertId();
+        });
+        return self::find($id);
     }
 
+    /** PUT parcial: los campos ausentes conservan su valor y un `null` explícito vacía los que admiten nulo. */
     public static function update(array $p, array $in): array
     {
         $id = (int) $p['id'];
         $task = self::find($id);
+        $in += array_intersect_key($task, array_flip(['title', 'description', 'checklist', 'priority', 'due_date']));
         $phaseId = isset($in['phase_id']) ? (int) $in['phase_id'] : (int) $task['phase_id'];
-        if ($phaseId !== (int) $task['phase_id']) {
-            self::assertPhaseBelongs($phaseId, (int) $task['project_id']);
-            $pos = (int) Db::one('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM tasks WHERE phase_id = ?', [$phaseId])['n'];
-        } else {
-            $pos = (int) $task['position'];
-        }
-        Db::run(
-            'UPDATE tasks SET phase_id = ?, title = ?, description = ?, checklist = ?, priority = ?, assignee_id = ?, due_date = ?, position = ? WHERE id = ?',
-            [$phaseId, Validate::string($in, 'title', true, 250), Validate::string($in, 'description', false, 65000), self::checklist($in),
-                Validate::enum($in, 'priority', self::PRIORITIES, 'normal'), self::assignee($in), Validate::date($in, 'due_date'), $pos, $id]
-        );
+        // El responsable solo se valida si la petición lo cambia: uno que se desactivó después no impide editar el resto.
+        $assignee = array_key_exists('assignee_id', $in) ? self::assignee($in) : ($task['assignee_id'] === null ? null : (int) $task['assignee_id']);
+        $data = [Validate::string($in, 'title', true, 250), Validate::string($in, 'description', false, 65000), self::checklist($in),
+            Validate::enum($in, 'priority', self::PRIORITIES, 'normal'), $assignee, Validate::date($in, 'due_date')];
+        Db::transaction(function () use ($id, $task, $phaseId, $data) {
+            if ($phaseId !== (int) $task['phase_id']) {
+                self::lockPhase($phaseId, (int) $task['project_id']);
+                $pos = Db::nextPosition('tasks', 'phase_id = ?', [$phaseId]);
+            } else {
+                $pos = (int) $task['position'];
+            }
+            Db::run(
+                'UPDATE tasks SET phase_id = ?, title = ?, description = ?, checklist = ?, priority = ?, assignee_id = ?, due_date = ?, position = ? WHERE id = ?',
+                [$phaseId, ...$data, $pos, $id]
+            );
+        });
         return self::find($id);
     }
 
@@ -79,14 +91,12 @@ final class TaskController
         $id = (int) $p['id'];
         $task = self::find($id);
         $phaseId = (int) ($in['phase_id'] ?? 0);
-        self::assertPhaseBelongs($phaseId, (int) $task['project_id']);
         $index = max(0, (int) ($in['index'] ?? 0));
 
-        $pdo = Db::pdo();
-        $pdo->beginTransaction();
-        try {
+        Db::transaction(function () use ($id, $task, $phaseId, $index) {
+            self::lockPhase($phaseId, (int) $task['project_id']);
             $ids = array_map('intval', array_column(
-                Db::all('SELECT id FROM tasks WHERE phase_id = ? AND id <> ? ORDER BY position, id', [$phaseId, $id]),
+                Db::all('SELECT id FROM tasks WHERE phase_id = ? AND id <> ? ORDER BY position, id FOR UPDATE', [$phaseId, $id]),
                 'id'
             ));
             array_splice($ids, min($index, count($ids)), 0, [$id]);
@@ -94,11 +104,7 @@ final class TaskController
             foreach ($ids as $i => $tid) {
                 Db::run('UPDATE tasks SET position = ? WHERE id = ?', [$i, $tid]);
             }
-            $pdo->commit();
-        } catch (Throwable $e) {
-            $pdo->rollBack();
-            throw $e;
-        }
+        });
         return self::find($id);
     }
 
@@ -159,9 +165,13 @@ final class TaskController
         return (int) $id;
     }
 
-    private static function assertPhaseBelongs(int $phaseId, int $projectId): void
+    /**
+     * Bloquea la fila de la fase (serializa altas y movimientos de tareas en ella y el borrado de la fase) y
+     * comprueba que pertenece al proyecto. Debe llamarse dentro de una transacción.
+     */
+    private static function lockPhase(int $phaseId, int $projectId): void
     {
-        $phase = Db::one('SELECT project_id FROM phases WHERE id = ?', [$phaseId]);
+        $phase = Db::one('SELECT project_id FROM phases WHERE id = ? FOR UPDATE', [$phaseId]);
         if (!$phase || (int) $phase['project_id'] !== $projectId) {
             throw new HttpError(422, 'La fase no pertenece al proyecto de la tarea');
         }

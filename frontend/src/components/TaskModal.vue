@@ -8,12 +8,12 @@
                     Checklist <small v-if="form.checklist.length" class="muted">{{ form.checklist.filter(i => i.done).length }}/{{ form.checklist.length }}</small>
                 </legend>
                 <div v-for="(item, i) in form.checklist" :key="i" class="check-item">
-                    <input type="checkbox" v-model="item.done" />
-                    <input v-model="item.text" maxlength="250" :class="{ done: item.done }" />
-                    <button type="button" class="icon" title="Quitar" @click="form.checklist.splice(i, 1)">×</button>
+                    <input type="checkbox" v-model="item.done" aria-label="Completado" />
+                    <input v-model="item.text" maxlength="250" aria-label="Texto del elemento" :class="{ done: item.done }" />
+                    <button type="button" class="icon" aria-label="Quitar elemento" title="Quitar" @click="form.checklist.splice(i, 1)">×</button>
                 </div>
                 <div class="check-item">
-                    <input v-model="newItem" maxlength="250" placeholder="Nuevo elemento…" @keydown.enter.prevent="addItem" />
+                    <input v-model="newItem" maxlength="250" placeholder="Nuevo elemento…" aria-label="Nuevo elemento del checklist" @keydown.enter.prevent="addItem" />
                     <button type="button" @click="addItem">Añadir</button>
                 </div>
             </fieldset>
@@ -53,15 +53,16 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { reactive, ref, watch } from 'vue';
 import Modal from './Modal.vue';
 import { api } from '../api.js';
 import { PRIORITY, auth } from '../store.js';
+import { useGuard } from '../composables/useGuard.js';
 
 const props = defineProps({ task: Object, phases: Array, projectId: Number, phaseId: Number });
 const emit = defineEmits(['close', 'saved', 'deleted']);
 
-const form = reactive({
+const initialForm = () => ({
     title: props.task?.title ?? '',
     description: props.task?.description ?? '',
     checklist: (props.task?.checklist ?? []).map(i => ({ ...i })),
@@ -70,7 +71,10 @@ const form = reactive({
     due_date: props.task?.due_date ?? '',
     phase_id: props.task?.phase_id ?? props.phaseId ?? props.phases[0]?.id,
 });
-const error = ref('');
+const form = reactive(initialForm());
+// Si el padre entrega otra tarea con el modal abierto, el formulario pasa a mostrarla.
+watch(() => props.task, () => Object.assign(form, initialForm()));
+const { error, guard } = useGuard();
 const newItem = ref('');
 
 function addItem() {
@@ -80,20 +84,17 @@ function addItem() {
     newItem.value = '';
 }
 
-async function save() {
-    error.value = '';
-    addItem();
-    try {
+const save = () =>
+    guard(async () => {
+        addItem();
         const saved = props.task ? await api.updateTask(props.task.id, form) : await api.createTask(props.projectId, form);
         emit('saved', saved);
-    } catch (e) {
-        error.value = e.message;
-    }
-}
+    });
 
-async function remove() {
-    if (!confirm('¿Eliminar esta tarea?')) return;
-    await api.deleteTask(props.task.id);
-    emit('deleted');
-}
+const remove = () =>
+    guard(async () => {
+        if (!confirm('¿Eliminar esta tarea?')) return;
+        await api.deleteTask(props.task.id);
+        emit('deleted');
+    });
 </script>

@@ -36,6 +36,14 @@ cp -r frontend/dist/* backend/public/      # junto a index.php y .htaccess
 
 Requisitos de Apache: `mod_rewrite`, `AllowOverride FileInfo` (o `All`) sobre el directorio, y `FollowSymLinks` si la carpeta es un enlace simbólico a `backend/public`. El prefijo del backend se deduce de `SCRIPT_NAME`; la cookie de sesión se limita a esa carpeta. `backend/.env` queda fuera de la raíz pública.
 
+## Pruebas
+
+```bash
+php backend/tests/run.php [filtro]   # pruebas de integración de la API (unos 30 s)
+```
+
+Usan una base de datos aparte (`CASIOPEA_TEST_DB`, por defecto `project_admin`) que se recrea desde `backend/database/schema.sql` en cada ejecución; el usuario de la base debe poder crearla o tener permisos sobre ella, y el runner se niega a usar `DB_NAME`. El frontend se comprueba con `cd frontend && pnpm build`.
+
 ## Modelo
 
 - `projects`: árbol por `parent_id` (profundidad ilimitada).

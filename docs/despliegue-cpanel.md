@@ -4,8 +4,8 @@ Esta guía instala Casiopea en un subdominio (por ejemplo `tareas.tudominio.com`
 
 | Archivo                       | Contenido                                                                                       |
 | ----------------------------- | ----------------------------------------------------------------------------------------------- |
-| `casiopea-backend-0.4.0.zip`  | API en PHP, migraciones, `database/schema.sql`, scripts y `public/index.php` con su `.htaccess` |
-| `casiopea-frontend-0.4.0.zip` | Interfaz compilada (`index.html` y `assets/`) para la raíz de un dominio o subdominio           |
+| `casiopea-backend-0.5.0.zip`  | API en PHP, migraciones, `database/schema.sql`, scripts y `public/index.php` con su `.htaccess` |
+| `casiopea-frontend-0.5.0.zip` | Interfaz compilada (`index.html` y `assets/`) para la raíz de un dominio o subdominio           |
 
 `deploy/` no está en git: los zips se generan con los comandos de la sección [Generar los zips](#generar-los-zips). El número del nombre es el de `backend/VERSION`.
 
@@ -26,7 +26,7 @@ Solo `public/` es accesible desde Internet. El código, las migraciones y las cr
 
 - PHP 8.3 o superior (probado con 8.4) con las extensiones `pdo_mysql` y `mbstring`.
 - MySQL 8.0 o superior, o MariaDB 10.5 o superior. La consulta de tareas de subproyectos usa `WITH RECURSIVE`, que MySQL 5.7 no tiene. Con MySQL, importa `database/schema.sql` (opción A2 del paso 8): `bin/migrate.php` no sirve para una instalación nueva en MySQL, porque las migraciones 002 y 003 usan `IF NOT EXISTS` en `ALTER TABLE`, que solo admite MariaDB.
-- `mod_rewrite` y `.htaccess` habilitados (es lo normal en cPanel).
+- `mod_rewrite` y `.htaccess` habilitados (es lo normal en cPanel). `mod_headers` es opcional: con él, el `.htaccess` añade cabeceras de seguridad (CSP, `X-Content-Type-Options`, etc.); sin él se ignoran.
 - Certificado SSL (Let's Encrypt/AutoSSL), porque se inicia sesión con contraseña.
 
 ## Pasos
@@ -35,14 +35,14 @@ Solo `public/` es accesible desde Internet. El código, las migraciones y las cr
 
 1. En cPanel abre **Administrador de archivos**.
 2. Ve a tu carpeta personal `/home/USUARIO/` (fuera de `public_html`).
-3. Pulsa **Cargar** y sube `casiopea-backend-0.4.0.zip`.
+3. Pulsa **Cargar** y sube `casiopea-backend-0.5.0.zip`.
 4. Selecciona el zip y pulsa **Extraer**. Se crea `/home/USUARIO/casiopea/`.
 5. Borra el zip.
 
 ### 2. Subir y descomprimir el frontend
 
 1. Entra en `/home/USUARIO/casiopea/public/`.
-2. Sube `casiopea-frontend-0.4.0.zip` y extráelo ahí mismo. Deben quedar `index.html` y `assets/` junto a `index.php`.
+2. Sube `casiopea-frontend-0.5.0.zip` y extráelo ahí mismo. Deben quedar `index.html` y `assets/` junto a `index.php`.
 3. Borra el zip.
 
 El Administrador de archivos oculta los archivos que empiezan por punto. En **Configuración** (arriba a la derecha) activa **Mostrar archivos ocultos** para ver `.htaccess` y, más adelante, `.env`.
@@ -119,7 +119,7 @@ Con Cron, el comando es el mismo con rutas absolutas y redirigiendo la salida a 
 
 ### 10. Probar
 
-1. Abre `https://tareas.tudominio.com/api/version`. Debe responder `{"version":"0.4.0"}` (el número de `backend/VERSION`).
+1. Abre `https://tareas.tudominio.com/api/version`. Debe responder `{"version":"0.5.0"}` (el número de `backend/VERSION`).
 2. Abre `https://tareas.tudominio.com/`, entra con tu usuario (o tu correo) y la contraseña.
 3. Comprueba que el número de versión aparece en la barra lateral.
 
@@ -143,6 +143,8 @@ Los errores de PHP quedan en `error_log`, dentro de `casiopea/public/` o en **Er
 3. Sube y extrae el nuevo zip del frontend en `casiopea/public/`. Los archivos de `assets/` cambian de nombre con cada build, así que conviene borrar antes la carpeta `assets/` vieja.
 4. Ejecuta de nuevo `bin/migrate.php` (paso 8): solo aplica las migraciones nuevas.
 5. Comprueba `/api/version`.
+
+Al pasar a una versión que añade `users.session_version` (migración 006), las sesiones abiertas dejan de ser válidas una vez: los usuarios deben volver a iniciar sesión. Opcionalmente, el `.env` admite `SESSION_LIFETIME` (segundos de vigencia de la sesión), `LOGIN_MAX_PER_LOGIN` y `LOGIN_MAX_PER_IP` (ver `.env.example`).
 
 ## Generar los zips
 

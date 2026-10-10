@@ -1,5 +1,6 @@
 <template>
     <h1>Tareas pendientes</h1>
+    <p v-if="error" class="error">{{ error }}</p>
     <div class="toolbar">
         <input v-model="search" placeholder="Buscar tarea…" />
         <select v-model="filterProject">
@@ -16,17 +17,11 @@
     <table class="grid">
         <thead>
             <tr>
-                <th @click="sort('title')">Tarea{{ arrow('title') }}</th>
-                <th @click="sort('project_name')">Proyecto{{ arrow('project_name') }}</th>
-                <th @click="sort('phase_name')">Fase{{ arrow('phase_name') }}</th>
-                <th @click="sort('assignee')">Responsable{{ arrow('assignee') }}</th>
-                <th @click="sort('priority')">Prioridad{{ arrow('priority') }}</th>
-                <th @click="sort('created_at')">Creada{{ arrow('created_at') }}</th>
-                <th @click="sort('due_date')">Fecha límite{{ arrow('due_date') }}</th>
+                <th v-for="c in columns" :key="c.key" tabindex="0" :aria-sort="ariaSort(c.key)" @click="sort(c.key)" @keydown.enter.prevent="sort(c.key)" @keydown.space.prevent="sort(c.key)">{{ c.label }}{{ arrow(c.key) }}</th>
             </tr>
         </thead>
         <tbody>
-            <tr v-for="t in rows" :key="t.id" @click="open(t)">
+            <tr v-for="t in rows" :key="t.id" tabindex="0" @click="open(t)" @keydown.enter.self.prevent="open(t)" @keydown.space.self.prevent="open(t)">
                 <td>{{ t.title }}</td>
                 <td>{{ t.project_name }}</td>
                 <td><span class="dot" :style="{ background: t.phase_color }" />{{ t.phase_name }}</td>
@@ -38,7 +33,7 @@
                 <td :class="{ overdue: overdue(t) }">{{ t.due_date ?? '' }}</td>
             </tr>
             <tr v-if="!rows.length">
-                <td colspan="7" class="muted">{{ loading ? 'Cargando…' : 'No hay tareas pendientes.' }}</td>
+                <td :colspan="columns.length" class="muted">{{ loading ? 'Cargando…' : 'No hay tareas pendientes.' }}</td>
             </tr>
         </tbody>
     </table>
@@ -62,28 +57,32 @@
 import { computed, onMounted, ref } from 'vue';
 import { PRIORITY, STATUS, auth, store } from '../store.js';
 import { api } from '../api.js';
+import { isOverdue as overdue } from '../dates.js';
+import { useGuard } from '../composables/useGuard.js';
+import { TASK_SORTERS, compare, useTaskTable } from '../composables/useTaskTable.js';
 import TaskModal from '../components/TaskModal.vue';
 
 const tasks = ref([]);
+// Un `<td>` por columna, en este mismo orden (ver la fila de la tabla).
+const columns = [
+    { key: 'title', label: 'Tarea' },
+    { key: 'project_name', label: 'Proyecto' },
+    { key: 'phase_name', label: 'Fase' },
+    { key: 'assignee', label: 'Responsable' },
+    { key: 'priority', label: 'Prioridad' },
+    { key: 'created_at', label: 'Creada' },
+    { key: 'due_date', label: 'Fecha límite' },
+];
+const { error, guard } = useGuard();
 const modal = ref(null); // { task, phases }
 const loading = ref(true);
-const search = ref('');
 const filterProject = ref('');
-const filterAssignee = ref('');
-const sortKey = ref('priority');
-const sortDir = ref(1);
-
-// Ascendente = urgente primero.
-const PRIO_ORDER = { urgent: 0, high: 1, normal: 2, low: 3 };
-const SORTERS = {
-    title: t => t.title.toLowerCase(),
-    project_name: t => t.project_name.toLowerCase(),
-    phase_name: t => t.phase_name.toLowerCase(),
-    assignee: t => (t.assignee_name ?? '￿').toLowerCase(),
-    priority: t => PRIO_ORDER[t.priority],
-    created_at: t => t.created_at,
-    due_date: t => t.due_date ?? '9999-99-99',
-};
+const { search, assignee: filterAssignee, rows, sort, arrow, ariaSort } = useTaskTable(tasks, {
+    sortKey: 'priority',
+    sorters: { ...TASK_SORTERS, phase_name: t => t.phase_name.toLowerCase(), created_at: t => t.created_at },
+    matches: t => !filterProject.value || t.project_id === filterProject.value,
+    tieBreak: (a, b) => compare(a.created_at, b.created_at) || a.id - b.id,
+});
 
 async function load() {
     try {
@@ -92,35 +91,24 @@ async function load() {
         loading.value = false;
     }
 }
-onMounted(load);
+onMounted(() => guard(load));
 
 // El modal necesita las fases del proyecto de la tarea (cada proyecto tiene las suyas).
-async function open(t) {
-    modal.value = { task: t, phases: await api.phases(t.project_id) };
-}
+const open = t =>
+    guard(async () => {
+        modal.value = { task: t, phases: await api.phases(t.project_id) };
+    });
 
-async function changed() {
-    modal.value = null;
-    await Promise.all([load(), store.refresh()]);
-}
+const changed = () =>
+    guard(async () => {
+        modal.value = null;
+        await Promise.all([load(), store.refresh()]);
+    });
 
 const projects = computed(() => {
     const ids = new Set(tasks.value.map(t => t.project_id));
     return store.projects.filter(p => ids.has(p.id));
 });
-
-const rows = computed(() => {
-    const q = search.value.trim().toLowerCase();
-    const val = SORTERS[sortKey.value];
-    return tasks.value.filter(t => (!filterProject.value || t.project_id === filterProject.value) && (!filterAssignee.value || (filterAssignee.value === 'none' ? !t.assignee_id : t.assignee_id === filterAssignee.value)) && (!q || t.title.toLowerCase().includes(q))).sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * sortDir.value || (a.created_at > b.created_at ? 1 : a.created_at < b.created_at ? -1 : a.id - b.id));
-});
-
-function sort(key) {
-    sortDir.value = sortKey.value === key ? -sortDir.value : 1;
-    sortKey.value = key;
-}
-const arrow = key => (sortKey.value === key ? (sortDir.value > 0 ? ' ▲' : ' ▼') : '');
-const overdue = t => t.due_date && t.due_date < new Date().toISOString().slice(0, 10);
 
 const roots = computed(() => store.children(null));
 const pct = p => (p.total_task_count ? Math.round((p.total_done_count / p.total_task_count) * 100) : 0);

@@ -20,10 +20,10 @@ final class UserController
         $data = self::validated($in);
         $password = self::password($in, true);
         self::assertFree($data);
-        Db::run(
+        self::uniqueOrFail(fn () => Db::run(
             'INSERT INTO users (username, name, email, password_hash, role, is_active) VALUES (?, ?, ?, ?, ?, ?)',
             [$data['username'], $data['name'], $data['email'], Auth::hashPassword($password), $data['role'], $data['is_active']]
-        );
+        ));
         return self::find(Db::insertId());
     }
 
@@ -32,18 +32,23 @@ final class UserController
         $me = Auth::requireAdmin();
         $id = (int) $p['id'];
         $current = self::find($id);
-        $data = self::validated($in);
+        // PUT parcial: los campos ausentes conservan su valor.
+        $data = self::validated($in + array_intersect_key($current, array_flip(['username', 'name', 'email', 'role', 'is_active'])));
         self::assertFree($data, $id);
         if ($id === (int) $me['id'] && ($data['role'] !== 'admin' || !$data['is_active'])) {
             throw new HttpError(422, 'No puedes quitarte el rol de administrador ni desactivarte');
         }
         $password = self::password($in, false);
-        Db::run(
+        self::uniqueOrFail(fn () => Db::run(
             'UPDATE users SET username = ?, name = ?, email = ?, role = ?, is_active = ? WHERE id = ?',
             [$data['username'], $data['name'], $data['email'], $data['role'], $data['is_active'], $id]
-        );
+        ));
         if ($password !== null) {
-            Db::run('UPDATE users SET password_hash = ? WHERE id = ?', [Auth::hashPassword($password), $id]);
+            // Subir la versión de credenciales cierra las sesiones abiertas de ese usuario.
+            Db::run('UPDATE users SET password_hash = ?, session_version = session_version + 1 WHERE id = ?', [Auth::hashPassword($password), $id]);
+            if ($id === (int) $me['id']) {
+                Auth::renewSession($id);
+            }
         }
         return self::find($id);
     }
@@ -67,10 +72,12 @@ final class UserController
         if (!password_verify((string) ($in['current_password'] ?? ''), $row['password_hash'])) {
             throw new HttpError(422, 'La contraseña actual no es correcta');
         }
+        // Subir la versión de credenciales cierra las demás sesiones; la actual se renueva y sigue activa.
         Db::run(
-            'UPDATE users SET password_hash = ? WHERE id = ?',
+            'UPDATE users SET password_hash = ?, session_version = session_version + 1 WHERE id = ?',
             [Auth::hashPassword(self::password($in, true, 'new_password')), $me['id']]
         );
+        Auth::renewSession((int) $me['id']);
     }
 
     public static function find(int $id): array
@@ -110,7 +117,24 @@ final class UserController
         if (!is_string($pw) || strlen($pw) < 8) {
             throw new HttpError(422, 'La contraseña debe tener al menos 8 caracteres');
         }
+        // bcrypt solo usa los primeros 72 bytes: una contraseña más larga se truncaría sin avisar.
+        if (strlen($pw) > 72) {
+            throw new HttpError(422, 'La contraseña no puede superar los 72 bytes');
+        }
         return $pw;
+    }
+
+    /** La comprobación de `assertFree` no es atómica: si otra petición se adelantó, la clave única responde con 422 y no con 500. */
+    private static function uniqueOrFail(callable $write): void
+    {
+        try {
+            $write();
+        } catch (PDOException $e) {
+            if (($e->errorInfo[1] ?? 0) !== 1062) {
+                throw $e;
+            }
+            throw new HttpError(422, str_contains($e->getMessage(), 'uq_users_email') ? 'Ya existe un usuario con ese correo' : 'Ya existe un usuario con ese nombre de usuario');
+        }
     }
 
     private static function assertFree(array $data, int $exceptId = 0): void

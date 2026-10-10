@@ -12,12 +12,15 @@ Hay dos caminos equivalentes. Una base existente se actualiza con las migracione
 | `002_users.sql`          | Tabla `users` y `tasks.assignee_id` (responsable)              |
 | `003_username.sql`       | `users.username` (único), con relleno para usuarios existentes |
 | `004_task_checklist.sql` | `tasks.checklist`: JSON con `[{"text", "done"}]`               |
+| `005_login_attempts.sql` | Tabla `login_attempts` (límite de intentos de login)           |
+| `006_session_version.sql`| `users.session_version` (invalida sesiones al cambiar la contraseña) |
+| `007_mediumtext.sql`     | `description` y `checklist` pasan de `TEXT` a `MEDIUMTEXT`     |
 
 ```bash
 php backend/bin/migrate.php   # aplica en orden las pendientes y las registra en schema_migrations
 ```
 
-Para una base **vacía** sin PHP (phpMyAdmin, MySQL, otro servidor) está `backend/database/schema.sql`: el esquema completo, equivalente a las migraciones 001 a 004, que además las registra como aplicadas. Se importa con **Importar** en phpMyAdmin o `mysql -u USUARIO -p NOMBRE_BD < backend/database/schema.sql`. Después, `migrate.php` solo aplica las migraciones nuevas. Este archivo no crea la base ni el usuario, ni ningún usuario de la aplicación (ver `bin/create-user.php`).
+Para una base **vacía** sin PHP (phpMyAdmin, MySQL, otro servidor) está `backend/database/schema.sql`: el esquema completo, equivalente a las migraciones 001 a 007, que además las registra como aplicadas. Se importa con **Importar** en phpMyAdmin o `mysql -u USUARIO -p NOMBRE_BD < backend/database/schema.sql`. Después, `migrate.php` solo aplica las migraciones nuevas. Este archivo no crea la base ni el usuario, ni ningún usuario de la aplicación (ver `bin/create-user.php`).
 
 Reglas para escribir migraciones nuevas:
 
@@ -31,8 +34,9 @@ Reglas para escribir migraciones nuevas:
 
 - **`projects`**: `id`, `parent_id` (→ `projects`, `ON DELETE CASCADE`), `name`, `description`, `status` (`active|paused|completed|archived`), `start_date`, `due_date`, `position`, `created_at`, `updated_at`.
 - **`phases`**: columnas del kanban, propias de cada proyecto. `id`, `project_id` (→ `projects`, cascade), `name`, `color`, `position`, `is_closed` (1 = trabajo terminado).
-- **`tasks`**: `id`, `project_id` (→ `projects`, cascade), `phase_id` (→ `phases`, cascade), `title`, `description`, `checklist` (JSON `[{"text","done"}]`, NULL si no hay), `priority` (`low|normal|high|urgent`), `assignee_id` (→ `users`, `ON DELETE SET NULL`), `due_date`, `position` (orden dentro de la fase), `created_at`, `updated_at`.
-- **`users`**: `id`, `username` (único), `name`, `email` (único), `password_hash`, `role` (`admin|member`), `is_active`, `created_at`, `updated_at`.
+- **`tasks`**: `id`, `project_id` (→ `projects`, cascade), `phase_id` (→ `phases`, cascade), `title`, `description` (`MEDIUMTEXT`), `checklist` (`MEDIUMTEXT` con JSON `[{"text","done"}]`, NULL si no hay), `priority` (`low|normal|high|urgent`), `assignee_id` (→ `users`, `ON DELETE SET NULL`), `due_date`, `position` (orden dentro de la fase), `created_at`, `updated_at`.
+- **`users`**: `id`, `username` (único), `name`, `email` (único), `password_hash`, `role` (`admin|member`), `is_active`, `session_version` (sube al cambiar o restablecer la contraseña; cada sesión debe igualarla), `created_at`, `updated_at`.
+- **`login_attempts`**: fallos de login recientes (`ip`, `login`, `attempted_at`); se purgan pasados 15 minutos. Sirve para el bloqueo con 429.
 - **`schema_migrations`**: `name`, `applied_at`. La crea `migrate.php`.
 
 ## Orden de las consultas de tareas

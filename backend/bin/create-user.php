@@ -15,8 +15,14 @@ if (!preg_match('/^[a-z0-9._-]{3,40}$/', $username) || !$email || !$name || !in_
     exit(1);
 }
 $password = $argv[5] ?? bin2hex(random_bytes(8));
-Db::run(
-    'INSERT INTO users (username, name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)',
-    [$username, $name, strtolower($email), Auth::hashPassword($password), $role]
-);
+try {
+    Db::run(
+        'INSERT INTO users (username, name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)',
+        [$username, $name, strtolower($email), Auth::hashPassword($password), $role]
+    );
+} catch (PDOException $e) {
+    $duplicate = ($e->errorInfo[1] ?? 0) === 1062;
+    fwrite(STDERR, $duplicate ? "Ya existe un usuario con ese nombre de usuario o ese correo.\n" : 'Error de base de datos: ' . $e->getMessage() . "\n");
+    exit(1);
+}
 echo "Usuario creado: $username <$email> ($role)\nContraseña: $password\n";

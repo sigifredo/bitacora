@@ -59,16 +59,8 @@ final class ProjectController
     public static function store(array $p, array $in): array
     {
         $data = self::validated($in);
-        $pdo = Db::pdo();
-        $pdo->beginTransaction();
-        try {
-            if ($data['parent_id'] !== null) {
-                self::find($data['parent_id']);
-            }
-            $pos = (int) (Db::one(
-                'SELECT COALESCE(MAX(position), -1) + 1 AS n FROM projects WHERE parent_id <=> ?',
-                [$data['parent_id']]
-            )['n']);
+        $id = Db::transaction(function () use ($data) {
+            $pos = self::nextSiblingPosition($data['parent_id']);
             Db::run(
                 'INSERT INTO projects (parent_id, name, description, status, start_date, due_date, position)
                  VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -77,31 +69,33 @@ final class ProjectController
             );
             $id = Db::insertId();
             self::seedPhases($id, $data['parent_id']);
-            $pdo->commit();
-        } catch (Throwable $e) {
-            $pdo->rollBack();
-            throw $e;
-        }
+            return $id;
+        });
         return self::find($id);
     }
 
     public static function update(array $p, array $in): array
     {
         $id = (int) $p['id'];
-        self::find($id);
-        $data = self::validated($in);
+        $current = self::find($id);
+        // PUT parcial: los campos ausentes conservan su valor y un `null` explícito vacía los que admiten nulo.
+        $data = self::validated($in + array_intersect_key($current, array_flip(['parent_id', 'name', 'description', 'status', 'start_date', 'due_date'])));
         if ($data['parent_id'] !== null) {
             self::find($data['parent_id']);
             if (self::isDescendantOrSelf($data['parent_id'], $id)) {
                 throw new HttpError(422, 'Un proyecto no puede ser hijo de sí mismo ni de sus descendientes');
             }
         }
-        Db::run(
-            'UPDATE projects SET parent_id = ?, name = ?, description = ?, status = ?, start_date = ?, due_date = ?
-             WHERE id = ?',
-            [$data['parent_id'], $data['name'], $data['description'], $data['status'],
-                $data['start_date'], $data['due_date'], $id]
-        );
+        Db::transaction(function () use ($id, $current, $data) {
+            // Al cambiar de padre pasa al final de sus nuevos hermanos; con el mismo padre conserva su posición.
+            $pos = $data['parent_id'] === $current['parent_id'] ? (int) $current['position'] : self::nextSiblingPosition($data['parent_id']);
+            Db::run(
+                'UPDATE projects SET parent_id = ?, name = ?, description = ?, status = ?, start_date = ?, due_date = ?, position = ?
+                 WHERE id = ?',
+                [$data['parent_id'], $data['name'], $data['description'], $data['status'],
+                    $data['start_date'], $data['due_date'], $pos, $id]
+            );
+        });
         return self::find($id);
     }
 
@@ -118,6 +112,22 @@ final class ProjectController
             throw new HttpError(404, 'Proyecto no encontrado');
         }
         return $row;
+    }
+
+    /**
+     * Posición al final de los hijos de `$parentId` (o de las raíces). Se bloquea al padre, o a las raíces, para que
+     * dos operaciones simultáneas no calculen la misma; debe llamarse dentro de una transacción.
+     */
+    private static function nextSiblingPosition(?int $parentId): int
+    {
+        if ($parentId === null) {
+            Db::all('SELECT id FROM projects WHERE parent_id IS NULL FOR UPDATE');
+            return Db::nextPosition('projects', 'parent_id IS NULL');
+        }
+        if (!Db::one('SELECT id FROM projects WHERE id = ? FOR UPDATE', [$parentId])) {
+            throw new HttpError(404, 'Proyecto no encontrado');
+        }
+        return Db::nextPosition('projects', 'parent_id = ?', [$parentId]);
     }
 
     private static function validated(array $in): array

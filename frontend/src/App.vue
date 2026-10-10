@@ -8,7 +8,7 @@
             <router-link to="/" exact-active-class="active" class="nav-pending">Tareas pendientes</router-link>
             <div class="sidebar-head">
                 <span>Proyectos</span>
-                <button class="icon" title="Nuevo proyecto" @click="creating = true">+</button>
+                <button class="icon" aria-label="Nuevo proyecto" title="Nuevo proyecto" @click="creating = true">+</button>
             </div>
             <ProjectTree :parent-id="null" />
             <footer class="sidebar-user">

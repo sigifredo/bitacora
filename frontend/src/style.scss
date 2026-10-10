@@ -107,6 +107,12 @@ button {
     }
 }
 
+// Foco de teclado visible en todos los controles (los ratones no lo muestran).
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
 input,
 select,
 textarea {
@@ -410,6 +416,28 @@ label {
         justify-content: space-between;
         margin-top: 6px;
         font-size: 12px;
+    }
+
+    // Mover a la fase contigua sin arrastrar: visible con ratón encima o foco, y siempre en pantallas táctiles.
+    .card-move {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 6px;
+        opacity: 0;
+        transition: opacity 0.12s;
+
+        button {
+            padding: 0 10px;
+        }
+    }
+    &:hover .card-move,
+    &:focus-within .card-move {
+        opacity: 1;
+    }
+    @media (hover: none) {
+        .card-move {
+            opacity: 1;
+        }
     }
     .due.late {
         color: var(--danger);

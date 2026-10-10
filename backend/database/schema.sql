@@ -1,4 +1,4 @@
--- Casiopea: esquema completo (equivale a aplicar las migraciones 001 a 004).
+-- Casiopea: esquema completo (equivale a aplicar las migraciones 001 a 007).
 -- Para una base de datos VACÍA, en MariaDB 10.5+ o MySQL 8.0+. Importar con phpMyAdmin
 -- (Importar) o: mysql -u USUARIO -p NOMBRE_BD < schema.sql
 -- Registra las migraciones como aplicadas, así que bin/migrate.php solo correrá las nuevas.
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS projects (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   parent_id INT UNSIGNED NULL,
   name VARCHAR(200) NOT NULL,
-  description TEXT NULL,
+  description MEDIUMTEXT NULL,
   status ENUM('active','paused','completed','archived') NOT NULL DEFAULT 'active',
   start_date DATE NULL,
   due_date DATE NULL,
@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('admin','member') NOT NULL DEFAULT 'member',
   is_active TINYINT(1) NOT NULL DEFAULT 1,
+  session_version INT UNSIGNED NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_users_email (email),
@@ -51,8 +52,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   project_id INT UNSIGNED NOT NULL,
   phase_id INT UNSIGNED NOT NULL,
   title VARCHAR(250) NOT NULL,
-  description TEXT NULL,
-  checklist TEXT NULL,
+  description MEDIUMTEXT NULL,
+  checklist MEDIUMTEXT NULL,
   priority ENUM('low','normal','high','urgent') NOT NULL DEFAULT 'normal',
   assignee_id INT UNSIGNED NULL,
   due_date DATE NULL,
@@ -66,6 +67,16 @@ CREATE TABLE IF NOT EXISTS tasks (
   INDEX idx_tasks_project (project_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  ip VARCHAR(45) NOT NULL,
+  login VARCHAR(190) NOT NULL,
+  attempted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_login_attempts_ip (ip, attempted_at),
+  INDEX idx_login_attempts_login (login, attempted_at),
+  INDEX idx_login_attempts_time (attempted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS schema_migrations (
   name VARCHAR(190) NOT NULL PRIMARY KEY,
   applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -75,4 +86,7 @@ INSERT IGNORE INTO schema_migrations (name) VALUES
   ('001_initial.sql'),
   ('002_users.sql'),
   ('003_username.sql'),
-  ('004_task_checklist.sql');
+  ('004_task_checklist.sql'),
+  ('005_login_attempts.sql'),
+  ('006_session_version.sql'),
+  ('007_mediumtext.sql');
