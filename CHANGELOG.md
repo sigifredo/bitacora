@@ -24,7 +24,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); l
 
 ### Cambiado
 
-- La aplicación pasa a llamarse **Casiopea** (título de la pestaña, barra lateral, pantalla de login y documentación). Los identificadores técnicos (`project_admin`, `project-admin`) no cambian, para no romper instalaciones existentes.
+- La aplicación pasa a llamarse **Casiopea** (título de la pestaña, barra lateral, pantalla de login y documentación).
 
 ## [0.2.0] - 2026-10-09
 

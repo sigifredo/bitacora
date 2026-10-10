@@ -9,9 +9,9 @@ PHP 8 (API REST sin dependencias) + Vue 3 (Vite) + MariaDB.
 sudo apt install php8.4-mysql php8.4-mbstring
 
 # 2. Base de datos
-sudo mariadb -e "CREATE DATABASE project_admin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-  CREATE USER 'project_admin'@'localhost' IDENTIFIED BY 'cambiar';
-  GRANT ALL ON project_admin.* TO 'project_admin'@'localhost';"
+sudo mariadb -e "CREATE DATABASE casiopea_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+  CREATE USER 'casiopea'@'localhost' IDENTIFIED BY 'cambiar';
+  GRANT ALL ON casiopea_db.* TO 'casiopea'@'localhost';"
 cp backend/.env.example backend/.env   # ajustar DB_PASS
 php backend/bin/migrate.php
 php backend/bin/create-user.php tuusuario tu@correo.com "Tu nombre completo" admin   # imprime la contraseña generada
@@ -28,8 +28,8 @@ El mismo build sirve en la raíz de un dominio o subdominio y en una carpeta. Ap
 ```bash
 # Raíz de dominio/subdominio
 cd frontend && pnpm build
-# Carpeta (p. ej. https://host/project-admin/): el prefijo se fija al compilar
-cd frontend && VITE_BASE=/project-admin/ pnpm build
+# Carpeta (p. ej. https://host/casiopea/): el prefijo se fija al compilar
+cd frontend && VITE_BASE=/casiopea/ pnpm build
 
 cp -r frontend/dist/* backend/public/      # junto a index.php y .htaccess
 ```
