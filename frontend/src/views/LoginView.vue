@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { auth } from '../store.js';
 
+const logo = `${import.meta.env.BASE_URL}logo.svg`;
 const route = useRoute();
 const router = useRouter();
 const form = reactive({ username: '', password: '' });
@@ -27,6 +28,7 @@ async function submit() {
 <template>
   <div class="login">
     <form @submit.prevent="submit">
+      <img class="logo" :src="logo" alt="" />
       <h1>Casiopea</h1>
       <label>Usuario<input v-model="form.username" required autofocus autocomplete="username" /></label>
       <label>Contraseña<input type="password" v-model="form.password" required autocomplete="current-password" /></label>
