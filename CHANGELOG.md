@@ -3,6 +3,12 @@
 Todos los cambios relevantes del proyecto se documentan aquí.
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); la versión vigente está en `backend/VERSION`.
 
+## [0.4.0] - 2026-10-10
+
+### Añadido
+
+- Tipografía alojada localmente (sin CDN de terceros): Inter (variable) como fuente de la interfaz, mediante `@fontsource-variable/inter`, y Kalam (700) para el nombre «Casiopea» en la barra lateral y en la pantalla de login, mediante `@fontsource/kalam`. `system-ui` queda como respaldo.
+
 ## [0.3.3] - 2026-10-10
 
 ### Añadido
