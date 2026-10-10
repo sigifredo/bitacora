@@ -15,12 +15,13 @@ sudo mariadb -e "CREATE DATABASE casiopea_db CHARACTER SET utf8mb4 COLLATE utf8m
   CREATE USER 'casiopea'@'localhost' IDENTIFIED BY 'cambiar';
   GRANT ALL ON casiopea_db.* TO 'casiopea'@'localhost';"
 cp backend/.env.example backend/.env   # ajustar DB_PASS (opcionales: SESSION_LIFETIME, LOGIN_MAX_PER_LOGIN, LOGIN_MAX_PER_IP)
-php backend/bin/migrate.php            # o, en una base vacía: mariadb casiopea_db < backend/database/schema.sql
+mariadb casiopea_db < backend/database/schema.sql
 php backend/bin/create-user.php tuusuario tu@correo.com "Tu nombre completo" admin   # imprime la contraseña generada
 
 # 3. API (puerto 8000) y frontend (puerto 5173, proxy /api)
 php -S 127.0.0.1:8000 -t backend/public backend/public/index.php
-cd frontend && pnpm install && pnpm dev
+cd frontend && pnpm install
+API_TARGET=http://127.0.0.1:8000 API_PREFIX= pnpm dev   # sin variables, el proxy apunta a Apache en http://localhost/casiopea/index.php
 ```
 
 ## Despliegue en Apache
@@ -54,7 +55,7 @@ Usan una base de datos aparte (`CASIOPEA_TEST_DB`, por defecto `project_admin`) 
 - Progreso: una fase con `is_closed = 1` cuenta como trabajo terminado; el progreso de un proyecto incluye las tareas de sus subproyectos.
 - `users`: cuentas con rol `admin` o `member`; no hay pertenencia a proyectos, cualquier usuario autenticado ve y edita todo. Sesión por cookie PHP con vigencia `SESSION_LIFETIME`; cambiar la contraseña cierra las demás sesiones (`session_version`). Las peticiones que modifican datos exigen la cabecera `X-Requested-With: fetch`. El login limita los intentos fallidos (`login_attempts`, respuesta 429).
 - Los `PUT` son parciales: los campos ausentes conservan su valor y un `null` explícito vacía los que admiten nulo.
-- Migraciones en `backend/database/migrations/`, registradas en `schema_migrations`; `backend/database/schema.sql` crea el esquema completo en una base vacía. Detalle de tablas y reglas en [`docs/base-de-datos.md`](docs/base-de-datos.md).
+- `backend/database/schema.sql` crea el esquema completo en una base vacía (no hay migraciones). Detalle de tablas y reglas en [`docs/base-de-datos.md`](docs/base-de-datos.md).
 
 ## Más documentación
 

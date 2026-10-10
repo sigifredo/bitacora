@@ -8,17 +8,18 @@ Casiopea: gestor de proyectos personales (tipo OpenProject): proyectos con subpr
 
 ```bash
 # Backend (desde la raíz). Configuración en backend/.env (plantilla: backend/.env.example)
-php backend/bin/migrate.php                       # aplica migraciones pendientes
+mariadb NOMBRE_BD < backend/database/schema.sql   # esquema en una base vacía (no hay migraciones)
 php backend/bin/create-user.php <usuario> <email> <nombre completo> [admin|member] [contraseña]
 php -S 127.0.0.1:8000 -t backend/public backend/public/index.php
 
 # Frontend (pnpm, no npm)
 cd frontend && pnpm install
-pnpm dev      # :5173, proxy de /api hacia :8000
+pnpm dev      # :5173; por defecto el proxy de /api apunta a Apache (http://localhost/casiopea/index.php)
+API_TARGET=http://127.0.0.1:8000 API_PREFIX= pnpm dev   # proxy hacia el servidor embebido de PHP
 pnpm build
 ```
 
-No hay linter configurado. Pruebas de integración de la API: `php backend/tests/run.php [filtro]` (el filtro es un texto del nombre de la prueba). Usan una base aparte (`CASIOPEA_TEST_DB`, por defecto `project_admin`; se aborta si coincide con `DB_NAME`), que se recrea desde `database/schema.sql` en cada ejecución, y un servidor embebido propio con varios workers. Cada prueba es una closure en `backend/tests/cases/*.php` que devuelve un arreglo `nombre => closure`; `Suite` ofrece aserciones y helpers (`project`, `task`, `phases`) y `Client` un cliente HTTP con cookies. Una migración o cambio de esquema debe reflejarse en `schema.sql`, porque las pruebas parten de él. Además: `php -l` por archivo y `pnpm build` (el frontend no tiene pruebas automáticas).
+No hay linter configurado. Pruebas de integración de la API: `php backend/tests/run.php [filtro]` (el filtro es un texto del nombre de la prueba). Usan una base aparte (`CASIOPEA_TEST_DB`, por defecto `project_admin`; se aborta si coincide con `DB_NAME`), que se recrea desde `database/schema.sql` en cada ejecución, y un servidor embebido propio con varios workers. Cada prueba es una closure en `backend/tests/cases/*.php` que devuelve un arreglo `nombre => closure`; `Suite` ofrece aserciones y helpers (`project`, `task`, `phases`) y `Client` un cliente HTTP con cookies. Un cambio de esquema se hace en `schema.sql`, porque las pruebas parten de él. Además: `php -l` por archivo y `pnpm build` (el frontend no tiene pruebas automáticas).
 
 pnpm 11 bloquea scripts de instalación: los builds permitidos (`esbuild`, `@parcel/watcher`) están en `frontend/pnpm-workspace.yaml` (`allowBuilds`). Una dependencia nueva con postinstall hay que añadirla ahí.
 
@@ -26,9 +27,9 @@ pnpm 11 bloquea scripts de instalación: los builds permitidos (`esbuild`, `@par
 
 **Backend** (`backend/`): front controller único `public/index.php` que registra todas las rutas con un `Router` propio (`src/Http.php`, junto con `HttpError` y `Validate`). No hay autoload: `index.php` hace `require_once` explícito de cada clase, así que un controlador nuevo debe añadirse a esa lista. Los controladores son clases con métodos estáticos `(array $params, array $body)` que devuelven arrays (se serializan a JSON) o lanzan `HttpError`. Acceso a datos con `Db` (PDO, sentencias preparadas, `.env` propio cargado por `Db::loadEnvFile`).
 
-Autenticación (`src/Auth.php`): sesión PHP por cookie, que se abre en modo solo lectura (`read_and_close`) salvo en login y logout para no serializar peticiones concurrentes; una ruta que necesite escribir en `$_SESSION` debe añadirse a esa excepción en `index.php`. Cada sesión guarda `user_id`, `session_version` e `issued_at`: `Auth::user()` la rechaza si `users.session_version` cambió (cambio o restablecimiento de contraseña, que llaman a `Auth::renewSession` para conservar la sesión actual) o si pasó `SESSION_LIFETIME`. El login limita los intentos fallidos (`login_attempts`, 429 con `Retry-After`) y verifica siempre un hash del mismo coste, también para usuarios inexistentes: los hashes se crean solo con `Auth::hashPassword` (coste fijo `HASH_COST`) y, si se cambia el coste, hay que regenerar `DECOY_HASH`. En `index.php`, toda ruta salvo login/logout pasa por `Auth::require()`, y toda petición no GET exige la cabecera `X-Requested-With: fetch` (defensa CSRF; el frontend la envía en `api.js`). Los permisos de admin se comprueban dentro de cada controlador con `Auth::requireAdmin()`. No existe pertenencia de usuarios a proyectos: cualquier usuario autenticado ve y edita todo.
+Autenticación (`src/Auth.php`): sesión PHP por cookie, que se abre en modo solo lectura (`read_and_close`) para no serializar peticiones concurrentes, salvo en login, logout, cambio de contraseña propia y `PUT /api/users/{id}` (que renuevan la sesión); una ruta que necesite escribir en `$_SESSION` debe añadirse a esa excepción en `index.php`. Cada sesión guarda `user_id`, `session_version` e `issued_at`: `Auth::user()` la rechaza si `users.session_version` cambió (cambio o restablecimiento de contraseña, que llaman a `Auth::renewSession` para conservar la sesión actual) o si pasó `SESSION_LIFETIME`. El login limita los intentos fallidos (`login_attempts`, 429 con `Retry-After`) y verifica siempre un hash del mismo coste, también para usuarios inexistentes: los hashes se crean solo con `Auth::hashPassword` (coste fijo `HASH_COST`) y, si se cambia el coste, hay que regenerar `DECOY_HASH`. En `index.php`, toda ruta salvo login/logout pasa por `Auth::require()`, y toda petición no GET exige la cabecera `X-Requested-With: fetch` (defensa CSRF; el frontend la envía en `api.js`). Los permisos de admin se comprueban dentro de cada controlador con `Auth::requireAdmin()`. No existe pertenencia de usuarios a proyectos: cualquier usuario autenticado ve y edita todo.
 
-Esquema por migraciones numeradas en `database/migrations/*.sql`, registradas en `schema_migrations`; `migrate.php` separa sentencias por `;` (no usar `;` dentro de literales). Las migraciones deben ser idempotentes (`IF NOT EXISTS`) porque la primera se aplicó sobre una base ya existente. `database/schema.sql` es el esquema completo para bases vacías (producción) y registra las migraciones como aplicadas: cada migración nueva debe reflejarse también ahí y en `CHANGELOG.md`.
+Esquema: `database/schema.sql` es la única fuente y se importa una vez en una base vacía (producción, sin shell: phpMyAdmin); no hay migraciones ni ruta de actualización entre versiones. Un cambio de esquema se edita ahí y se anota en `CHANGELOG.md`. El primer administrador de producción sale de `database/seed-admin.sql` (plantilla con hash bcrypt generado en local); `bin/create-user.php` es solo para desarrollo.
 
 Modelo de datos y reglas que cruzan archivos:
 
