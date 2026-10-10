@@ -31,6 +31,7 @@ Autenticación (`src/Auth.php`): sesión PHP por cookie. En `index.php`, toda ru
 Esquema por migraciones numeradas en `database/migrations/*.sql`, registradas en `schema_migrations`; `migrate.php` separa sentencias por `;` (no usar `;` dentro de literales). Las migraciones deben ser idempotentes (`IF NOT EXISTS`) porque la primera se aplicó sobre una base ya existente.
 
 Modelo de datos y reglas que cruzan archivos:
+
 - `projects` es un árbol por `parent_id` con `ON DELETE CASCADE`: borrar un proyecto elimina subproyectos, fases y tareas. `ProjectController::update` impide ciclos.
 - **Las fases son por proyecto, no globales.** Al crear un subproyecto se copian las fases del padre (`seedPhases`); un proyecto raíz recibe las predeterminadas. Una tarea solo puede estar en una fase de su propio proyecto (`assertPhaseBelongs`).
 - Fase con `is_closed = 1` cuenta como trabajo terminado: de ahí salen `done_count`/progreso en `ProjectController::SELECT`.

@@ -1,7 +1,7 @@
 // Prefijo de despliegue ('' en la raíz, '/project-admin' en una carpeta). Lo fija VITE_BASE al compilar.
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-let unauthorizedHandler = () => {};
+let unauthorizedHandler = () => { };
 export const onUnauthorized = (fn) => (unauthorizedHandler = fn);
 
 async function request(method, url, body) {
@@ -37,11 +37,9 @@ export const api = {
     createPhase: (pid, data) => request('POST', `/api/projects/${pid}/phases`, data),
     updatePhase: (id, data) => request('PUT', `/api/phases/${id}`, data),
     reorderPhases: (pid, ids) => request('PUT', `/api/projects/${pid}/phases/order`, { ids }),
-    deletePhase: (id, moveTo) =>
-        request('DELETE', `/api/phases/${id}${moveTo ? `?move_to=${moveTo}` : ''}`),
+    deletePhase: (id, moveTo) => request('DELETE', `/api/phases/${id}${moveTo ? `?move_to=${moveTo}` : ''}`),
 
-    tasks: (pid, includeChildren = false) =>
-        request('GET', `/api/projects/${pid}/tasks${includeChildren ? '?include_children=1' : ''}`),
+    tasks: (pid, includeChildren = false) => request('GET', `/api/projects/${pid}/tasks${includeChildren ? '?include_children=1' : ''}`),
     pendingTasks: () => request('GET', '/api/tasks/pending'),
     createTask: (pid, data) => request('POST', `/api/projects/${pid}/tasks`, data),
     updateTask: (id, data) => request('PUT', `/api/tasks/${id}`, data),
