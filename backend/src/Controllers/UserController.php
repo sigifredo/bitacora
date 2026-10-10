@@ -22,7 +22,7 @@ final class UserController
         self::assertFree($data);
         Db::run(
             'INSERT INTO users (username, name, email, password_hash, role, is_active) VALUES (?, ?, ?, ?, ?, ?)',
-            [$data['username'], $data['name'], $data['email'], password_hash($password, PASSWORD_DEFAULT), $data['role'], $data['is_active']]
+            [$data['username'], $data['name'], $data['email'], Auth::hashPassword($password), $data['role'], $data['is_active']]
         );
         return self::find(Db::insertId());
     }
@@ -43,7 +43,7 @@ final class UserController
             [$data['username'], $data['name'], $data['email'], $data['role'], $data['is_active'], $id]
         );
         if ($password !== null) {
-            Db::run('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash($password, PASSWORD_DEFAULT), $id]);
+            Db::run('UPDATE users SET password_hash = ? WHERE id = ?', [Auth::hashPassword($password), $id]);
         }
         return self::find($id);
     }
@@ -69,7 +69,7 @@ final class UserController
         }
         Db::run(
             'UPDATE users SET password_hash = ? WHERE id = ?',
-            [password_hash(self::password($in, true, 'new_password'), PASSWORD_DEFAULT), $me['id']]
+            [Auth::hashPassword(self::password($in, true, 'new_password')), $me['id']]
         );
     }
 
