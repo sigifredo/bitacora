@@ -1,0 +1,55 @@
+@use 'tokens' as *;
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font:
+        14px/1.45 'Inter Variable',
+        system-ui,
+        sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+#app {
+    display: flex;
+    min-height: 100vh;
+}
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+h1 {
+    font-size: 22px;
+    margin: 0 0 6px;
+}
+
+// Utilidades
+.muted {
+    color: var(--muted);
+}
+.pre {
+    white-space: pre-wrap;
+}
+.spacer {
+    flex: 1;
+}
+.error {
+    color: var(--danger);
+}
+
+// En el modo cajón la barra superior y el contenido se apilan en bloque (ver App.vue).
+@media (max-width: $breakpoint-drawer) {
+    #app {
+        display: block;
+    }
+}
+
+@media (max-width: $breakpoint-compact) {
+    h1 {
+        font-size: 19px;
+    }
+}

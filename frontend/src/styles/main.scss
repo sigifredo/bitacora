@@ -1,0 +1,7 @@
+// Capa global: tema, base y primitivas compartidas. El resto de estilos vive en cada componente (`<style scoped>`).
+@use 'theme';
+@use 'base';
+@use 'forms';
+@use 'badge';
+@use 'layout';
+@use 'table';

@@ -37,7 +37,7 @@ $router->add('GET', '/api/projects/{id}/phases', fn ($p, $b) => PhaseController:
 $router->add('POST', '/api/projects/{id}/phases', fn ($p, $b) => PhaseController::store($p, $b));
 $router->add('PUT', '/api/projects/{id}/phases/order', fn ($p, $b) => PhaseController::reorder($p, $b));
 $router->add('PUT', '/api/phases/{id}', fn ($p, $b) => PhaseController::update($p, $b));
-$router->add('DELETE', '/api/phases/{id}', fn ($p, $b) => PhaseController::destroy($p, $b));
+$router->add('DELETE', '/api/phases/{id}', fn ($p, $b) => PhaseController::destroy($p));
 
 $router->add('GET', '/api/tasks/pending', fn ($p, $b) => TaskController::pending());
 $router->add('GET', '/api/projects/{id}/tasks', fn ($p, $b) => TaskController::index($p));
@@ -70,8 +70,11 @@ try {
         return;
     }
 
-    Auth::start($base);
-    Auth::requireCsrfHeader($_SERVER['REQUEST_METHOD']);
+    // Solo estas rutas escriben en la sesión (inicio, cierre y cambio de credenciales); el resto únicamente la lee.
+    $method = $_SERVER['REQUEST_METHOD'];
+    Auth::start($base, in_array($path, ['/api/auth/login', '/api/auth/logout', '/api/auth/password'], true)
+        || ($method === 'PUT' && preg_match('#^/api/users/\d+$#', $path) === 1));
+    Auth::requireCsrfHeader($method);
     if (!in_array($path, ['/api/version', '/api/auth/login', '/api/auth/logout'], true)) {
         Auth::require();
     }

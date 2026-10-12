@@ -22,8 +22,13 @@ final class Db
                 continue;
             }
             [$k, $v] = explode('=', $line, 2);
+            $v = trim($v);
+            // Valor entre comillas simples o dobles: se quitan las del extremo (dentro conserva espacios y `=`).
+            if (strlen($v) >= 2 && ($v[0] === '"' || $v[0] === "'") && $v[-1] === $v[0]) {
+                $v = substr($v, 1, -1);
+            }
             if (getenv(trim($k)) === false) {
-                putenv(trim($k) . '=' . trim($v));
+                putenv(trim($k) . '=' . $v);
             }
         }
     }
@@ -68,6 +73,39 @@ final class Db
         $st = self::pdo()->prepare($sql);
         $st->execute($params);
         return $st->rowCount();
+    }
+
+    /**
+     * Ejecuta `$fn` en una transacción: confirma si termina y revierte si lanza. Si ya hay una transacción abierta,
+     * `$fn` se une a ella y la decisión de confirmar o revertir la toma la más externa.
+     */
+    public static function transaction(callable $fn): mixed
+    {
+        $pdo = self::pdo();
+        if ($pdo->inTransaction()) {
+            return $fn();
+        }
+        $pdo->beginTransaction();
+        try {
+            $result = $fn();
+            $pdo->commit();
+            return $result;
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Siguiente `position` libre de un grupo (`$table` y `$where` son fragmentos fijos del código, nunca entrada del usuario).
+     * Es una lectura con bloqueo (ve el último dato confirmado); para que dos altas simultáneas no obtengan el mismo
+     * valor hay que llamarla dentro de una transacción tras bloquear la fila padre con `SELECT ... FOR UPDATE`.
+     */
+    public static function nextPosition(string $table, string $where, array $params = []): int
+    {
+        return (int) self::one("SELECT COALESCE(MAX(position), -1) + 1 AS n FROM $table WHERE $where FOR UPDATE", $params)['n'];
     }
 
     public static function insertId(): int

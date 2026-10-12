@@ -11,6 +11,9 @@ final class HttpError extends RuntimeException
 
 final class Router
 {
+    /** Tamaño máximo del cuerpo de una petición (bytes); una descripción de 65 000 emojis escapada como JSON ocupa unos 780 KB. */
+    private const MAX_BODY = 2_097_152;
+
     /** @var array<int, array{string, string, callable}> */
     private array $routes = [];
 
@@ -39,11 +42,20 @@ final class Router
         throw new HttpError($allowed ? 405 : 404, $allowed ? 'Método no permitido' : 'Ruta no encontrada');
     }
 
+    /** Parámetro de la cadena de consulta (`?clave=valor`), o null si no viene o no es un texto. */
+    public static function query(string $key): ?string
+    {
+        return isset($_GET[$key]) && is_string($_GET[$key]) ? $_GET[$key] : null;
+    }
+
     public static function body(): array
     {
-        $raw = file_get_contents('php://input');
+        $raw = file_get_contents('php://input', false, null, 0, self::MAX_BODY + 1);
         if ($raw === false || $raw === '') {
             return [];
+        }
+        if (strlen($raw) > self::MAX_BODY) {
+            throw new HttpError(413, 'Petición demasiado grande');
         }
         $data = json_decode($raw, true);
         if (!is_array($data)) {
@@ -62,19 +74,24 @@ final class Router
 
 final class Validate
 {
+    /** Texto recortado; el límite `$max` se mide en caracteres sobre el valor ya recortado. */
     public static function string(array $in, string $key, bool $required = true, int $max = 255): ?string
     {
         $v = $in[$key] ?? null;
-        if ($v === null || (is_string($v) && trim($v) === '')) {
+        if ($v !== null && !is_string($v)) {
+            throw new HttpError(422, "El campo '$key' es inválido");
+        }
+        $v = $v === null ? '' : trim($v);
+        if ($v === '') {
             if ($required) {
                 throw new HttpError(422, "El campo '$key' es obligatorio");
             }
             return null;
         }
-        if (!is_string($v) || mb_strlen($v) > $max) {
+        if (mb_strlen($v) > $max) {
             throw new HttpError(422, "El campo '$key' es inválido");
         }
-        return trim($v);
+        return $v;
     }
 
     public static function enum(array $in, string $key, array $allowed, string $default): string

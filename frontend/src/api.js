@@ -10,9 +10,17 @@ async function request(method, url, body) {
         headers: { 'X-Requested-With': 'fetch', ...(body ? { 'Content-Type': 'application/json' } : {}) },
         body: body ? JSON.stringify(body) : undefined,
     });
-    const data = await res.json().catch(() => ({}));
+    // El cuerpo se lee como texto: un fallo de servidor o de proxy suele ser HTML, no JSON.
+    const text = await res.text();
+    let data = null;
+    try {
+        data = text ? JSON.parse(text) : null;
+    } catch {
+        // no es JSON: se trata abajo según el estado de la respuesta
+    }
     if (res.status === 401 && !url.startsWith('/api/auth/login')) unauthorizedHandler();
-    if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+    if (!res.ok) throw new Error(data?.error || `Error ${res.status}`);
+    if (data === null) throw new Error('Respuesta inválida del servidor');
     return data;
 }
 

@@ -1,0 +1,72 @@
+@use 'tokens' as *;
+
+// Barra de filtros y tabla de tareas/usuarios, compartidas por HomeView, TableView y UsersView.
+.toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+
+    input {
+        max-width: 260px;
+    }
+    select {
+        max-width: 200px;
+    }
+}
+
+.grid {
+    @include panel(8px);
+    width: 100%;
+    border-collapse: collapse;
+
+    th {
+        text-align: left;
+        padding: 8px 12px;
+        font-size: 12px;
+        color: var(--muted);
+        cursor: pointer;
+        user-select: none;
+        border-bottom: 1px solid var(--line);
+    }
+
+    td {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    tbody tr {
+        cursor: pointer;
+
+        &:hover {
+            @include tint(7%);
+        }
+    }
+
+    .dot {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        margin-right: 6px;
+    }
+}
+
+@media (max-width: $breakpoint-compact) {
+    .toolbar {
+        flex-wrap: wrap;
+
+        input,
+        select {
+            flex: 1 1 100%;
+            max-width: none;
+        }
+    }
+
+    // Las tablas se desplazan en horizontal en lugar de desbordar la página.
+    .grid {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}

@@ -2,10 +2,10 @@
 
 Esta guía instala Casiopea en un subdominio (por ejemplo `tareas.tudominio.com`) de un hosting con cPanel. Los archivos necesarios están en `deploy/`:
 
-| Archivo                       | Contenido                                                                                       |
-| ----------------------------- | ----------------------------------------------------------------------------------------------- |
-| `casiopea-backend-0.4.0.zip`  | API en PHP, migraciones, `database/schema.sql`, scripts y `public/index.php` con su `.htaccess` |
-| `casiopea-frontend-0.4.0.zip` | Interfaz compilada (`index.html` y `assets/`) para la raíz de un dominio o subdominio           |
+| Archivo                       | Contenido                                                                                            |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `casiopea-backend-0.6.2.zip`  | API en PHP, `database/schema.sql`, `database/seed-admin.sql` y `public/index.php` con su `.htaccess` |
+| `casiopea-frontend-0.6.2.zip` | Interfaz compilada (`index.html` y `assets/`) para la raíz de un dominio o subdominio                |
 
 `deploy/` no está en git: los zips se generan con los comandos de la sección [Generar los zips](#generar-los-zips). El número del nombre es el de `backend/VERSION`.
 
@@ -15,18 +15,18 @@ Estructura final en el servidor (`USUARIO` es tu usuario de cPanel):
 /home/USUARIO/casiopea/
     .env                 <- lo creas tú, nunca dentro de public
     VERSION
-    bin/  database/  src/
+    database/  src/
     public/              <- raíz web del subdominio
         index.php  .htaccess  index.html  assets/
 ```
 
-Solo `public/` es accesible desde Internet. El código, las migraciones y las credenciales quedan fuera de la raíz web.
+Solo `public/` es accesible desde Internet. El código, los SQL y las credenciales quedan fuera de la raíz web.
 
 ## Requisitos del hosting
 
 - PHP 8.3 o superior (probado con 8.4) con las extensiones `pdo_mysql` y `mbstring`.
-- MySQL 8.0 o superior, o MariaDB 10.5 o superior. La consulta de tareas de subproyectos usa `WITH RECURSIVE`, que MySQL 5.7 no tiene. Con MySQL, importa `database/schema.sql` (opción A2 del paso 8): `bin/migrate.php` no sirve para una instalación nueva en MySQL, porque las migraciones 002 y 003 usan `IF NOT EXISTS` en `ALTER TABLE`, que solo admite MariaDB.
-- `mod_rewrite` y `.htaccess` habilitados (es lo normal en cPanel).
+- MySQL 8.0 o superior, o MariaDB 10.5 o superior. La consulta de tareas de subproyectos usa `WITH RECURSIVE`, que MySQL 5.7 no tiene.
+- `mod_rewrite` y `.htaccess` habilitados (es lo normal en cPanel). `mod_headers` es opcional: con él, el `.htaccess` añade cabeceras de seguridad (CSP, `X-Content-Type-Options`, etc.); sin él se ignoran.
 - Certificado SSL (Let's Encrypt/AutoSSL), porque se inicia sesión con contraseña.
 
 ## Pasos
@@ -35,14 +35,14 @@ Solo `public/` es accesible desde Internet. El código, las migraciones y las cr
 
 1. En cPanel abre **Administrador de archivos**.
 2. Ve a tu carpeta personal `/home/USUARIO/` (fuera de `public_html`).
-3. Pulsa **Cargar** y sube `casiopea-backend-0.4.0.zip`.
+3. Pulsa **Cargar** y sube `casiopea-backend-0.6.2.zip`.
 4. Selecciona el zip y pulsa **Extraer**. Se crea `/home/USUARIO/casiopea/`.
 5. Borra el zip.
 
 ### 2. Subir y descomprimir el frontend
 
 1. Entra en `/home/USUARIO/casiopea/public/`.
-2. Sube `casiopea-frontend-0.4.0.zip` y extráelo ahí mismo. Deben quedar `index.html` y `assets/` junto a `index.php`.
+2. Sube `casiopea-frontend-0.6.2.zip` y extráelo ahí mismo. Deben quedar `index.html` y `assets/` junto a `index.php`.
 3. Borra el zip.
 
 El Administrador de archivos oculta los archivos que empiezan por punto. En **Configuración** (arriba a la derecha) activa **Mostrar archivos ocultos** para ver `.htaccess` y, más adelante, `.env`.
@@ -84,42 +84,22 @@ Sin comillas ni espacios alrededor del `=`. Si la contraseña tiene caracteres e
 
 En **SSL/TLS Status** ejecuta **Run AutoSSL** para el subdominio y espera a que aparezca el candado.
 
-### 8. Crear las tablas (migraciones)
+### 8. Crear las tablas
 
-**Opción A: Terminal de cPanel** (si tu hosting la tiene, en **Avanzado > Terminal**):
-
-```bash
-cd ~/casiopea
-/usr/local/bin/ea-php84 bin/migrate.php
-```
-
-Cambia `ea-php84` por la versión que elegiste (`ea-php83`, etc.). La salida esperada termina en `Esquema al día.`
-
-**Opción A2: sin Terminal, con phpMyAdmin** (la más simple, y la que corresponde a una base vacía). En **phpMyAdmin** selecciona la base de datos vacía, ve a **Importar** y sube `database/schema.sql` (está en el zip del backend, en `casiopea/database/`; descárgalo desde el Administrador de archivos). Crea el esquema completo y registra las migraciones como aplicadas, de modo que más adelante `migrate.php` solo ejecuta las nuevas. No crea ningún usuario de la aplicación: el administrador se crea con el paso 9 o importando un SQL propio con un `INSERT INTO users`.
-
-**Opción B: sin Terminal, con Tareas Cron** (en **Avanzado > Trabajos de Cron**):
-
-1. Añade un trabajo que corra cada minuto con este comando:
-    ```
-    /usr/local/bin/ea-php84 /home/USUARIO/casiopea/bin/migrate.php > /home/USUARIO/migrate.log 2>&1
-    ```
-2. Espera un par de minutos y revisa `/home/USUARIO/migrate.log`. Debe decir `Esquema al día.`
-3. Borra el trabajo de cron y el log.
+El servidor no necesita shell: todo se hace en **phpMyAdmin**. Selecciona la base de datos vacía del paso 3, ve a **Importar** y sube `database/schema.sql` (está en el zip del backend, en `casiopea/database/`; descárgalo desde el Administrador de archivos o usa el del repositorio). Crea el esquema completo. Si alguna tabla ya existe, la importación falla: vacía la base antes de repetirla.
 
 ### 9. Crear el primer administrador
 
-Con la misma técnica (Terminal o Cron de una sola vez):
-
-```bash
-cd ~/casiopea
-/usr/local/bin/ea-php84 bin/create-user.php tuusuario tu@correo.com "Tu nombre completo" admin 'UnaContraseñaLarga'
-```
-
-Con Cron, el comando es el mismo con rutas absolutas y redirigiendo la salida a un log. Bórralo en cuanto confirmes que el usuario existe, porque la contraseña queda escrita en la configuración del cron. Cámbiala después desde la interfaz (botón **Contraseña**).
+1. En tu equipo, genera el hash de la contraseña (comillas simples alrededor de la contraseña):
+    ```bash
+    php -r "echo password_hash('UnaContraseñaLarga', PASSWORD_BCRYPT, ['cost' => 10]), PHP_EOL;"
+    ```
+2. Copia `database/seed-admin.sql`, sustituye `TU_USUARIO`, `TU NOMBRE COMPLETO`, `tu@correo.com` y `TU_HASH_BCRYPT`, y ejecútalo en la pestaña **SQL** de phpMyAdmin (o súbelo con **Importar**).
+3. Cambia la contraseña desde la interfaz (botón **Contraseña**) tras entrar. No guardes el SQL con el hash modificado dentro del repositorio ni del servidor.
 
 ### 10. Probar
 
-1. Abre `https://tareas.tudominio.com/api/version`. Debe responder `{"version":"0.4.0"}` (el número de `backend/VERSION`).
+1. Abre `https://tareas.tudominio.com/api/version`. Debe responder `{"version":"0.6.2"}` (el número de `backend/VERSION`).
 2. Abre `https://tareas.tudominio.com/`, entra con tu usuario (o tu correo) y la contraseña.
 3. Comprueba que el número de versión aparece en la barra lateral.
 
@@ -136,13 +116,16 @@ Con Cron, el comando es el mismo con rutas absolutas y redirigiendo la salida a 
 
 Los errores de PHP quedan en `error_log`, dentro de `casiopea/public/` o en **Errores** de cPanel.
 
-## Actualizar a una versión nueva
+## Actualizar el código
 
-1. Haz una copia de seguridad de la base de datos en **Copia de seguridad** o con phpMyAdmin (**Exportar**).
+El esquema no se actualiza: no hay migraciones. Esta sección solo cubre el código y vale mientras la versión nueva no cambie `schema.sql` (el `CHANGELOG.md` lo indica).
+
+1. Haz una copia de seguridad de la base de datos con phpMyAdmin (**Exportar**).
 2. Sube y extrae el nuevo zip del backend sobre `casiopea/`, sin tocar `.env`. El zip no lo incluye, así que no se sobrescribe.
 3. Sube y extrae el nuevo zip del frontend en `casiopea/public/`. Los archivos de `assets/` cambian de nombre con cada build, así que conviene borrar antes la carpeta `assets/` vieja.
-4. Ejecuta de nuevo `bin/migrate.php` (paso 8): solo aplica las migraciones nuevas.
-5. Comprueba `/api/version`.
+4. Comprueba `/api/version`.
+
+Opcionalmente, el `.env` admite `SESSION_LIFETIME` (segundos de vigencia de la sesión), `LOGIN_MAX_PER_LOGIN` y `LOGIN_MAX_PER_IP` (ver `.env.example`).
 
 ## Generar los zips
 
@@ -152,7 +135,7 @@ Desde la raíz del repositorio (necesita `zip` y `pnpm`):
 V=$(cat backend/VERSION)
 pnpm --dir frontend build
 rm -rf deploy/stage && mkdir -p deploy/stage/casiopea/public
-cp -r backend/VERSION backend/.env.example backend/bin backend/database backend/src deploy/stage/casiopea/
+cp -r backend/VERSION backend/.env.example backend/database backend/src deploy/stage/casiopea/
 cp backend/public/index.php backend/public/.htaccess deploy/stage/casiopea/public/
 (cd deploy/stage && zip -qr ../casiopea-backend-$V.zip casiopea)
 (cd frontend/dist && zip -qr ../../deploy/casiopea-frontend-$V.zip .)
