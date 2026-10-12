@@ -1,3 +1,6 @@
+import '@fontsource-variable/inter/wght.css';
+import '@fontsource/kalam/latin-700.css';
+import './styles/main.scss';
 import { createApp, watch } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import App from './App.vue';
@@ -6,9 +9,6 @@ import LoginView from './views/LoginView.vue';
 import ProjectView from './views/ProjectView.vue';
 import UsersView from './views/UsersView.vue';
 import { auth } from './store.js';
-import '@fontsource-variable/inter/wght.css';
-import '@fontsource/kalam/latin-700.css';
-import './style.scss';
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),

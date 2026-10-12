@@ -2,10 +2,10 @@
 
 Esta guía instala Casiopea en un subdominio (por ejemplo `tareas.tudominio.com`) de un hosting con cPanel. Los archivos necesarios están en `deploy/`:
 
-| Archivo                       | Contenido                                                                                       |
-| ----------------------------- | ----------------------------------------------------------------------------------------------- |
-| `casiopea-backend-0.6.0.zip`  | API en PHP, `database/schema.sql`, `database/seed-admin.sql` y `public/index.php` con su `.htaccess` |
-| `casiopea-frontend-0.6.0.zip` | Interfaz compilada (`index.html` y `assets/`) para la raíz de un dominio o subdominio           |
+| Archivo                       | Contenido                                                                                            |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `casiopea-backend-0.6.2.zip`  | API en PHP, `database/schema.sql`, `database/seed-admin.sql` y `public/index.php` con su `.htaccess` |
+| `casiopea-frontend-0.6.2.zip` | Interfaz compilada (`index.html` y `assets/`) para la raíz de un dominio o subdominio                |
 
 `deploy/` no está en git: los zips se generan con los comandos de la sección [Generar los zips](#generar-los-zips). El número del nombre es el de `backend/VERSION`.
 
@@ -35,14 +35,14 @@ Solo `public/` es accesible desde Internet. El código, los SQL y las credencial
 
 1. En cPanel abre **Administrador de archivos**.
 2. Ve a tu carpeta personal `/home/USUARIO/` (fuera de `public_html`).
-3. Pulsa **Cargar** y sube `casiopea-backend-0.6.0.zip`.
+3. Pulsa **Cargar** y sube `casiopea-backend-0.6.2.zip`.
 4. Selecciona el zip y pulsa **Extraer**. Se crea `/home/USUARIO/casiopea/`.
 5. Borra el zip.
 
 ### 2. Subir y descomprimir el frontend
 
 1. Entra en `/home/USUARIO/casiopea/public/`.
-2. Sube `casiopea-frontend-0.6.0.zip` y extráelo ahí mismo. Deben quedar `index.html` y `assets/` junto a `index.php`.
+2. Sube `casiopea-frontend-0.6.2.zip` y extráelo ahí mismo. Deben quedar `index.html` y `assets/` junto a `index.php`.
 3. Borra el zip.
 
 El Administrador de archivos oculta los archivos que empiezan por punto. En **Configuración** (arriba a la derecha) activa **Mostrar archivos ocultos** para ver `.htaccess` y, más adelante, `.env`.
@@ -99,7 +99,7 @@ El servidor no necesita shell: todo se hace en **phpMyAdmin**. Selecciona la bas
 
 ### 10. Probar
 
-1. Abre `https://tareas.tudominio.com/api/version`. Debe responder `{"version":"0.6.0"}` (el número de `backend/VERSION`).
+1. Abre `https://tareas.tudominio.com/api/version`. Debe responder `{"version":"0.6.2"}` (el número de `backend/VERSION`).
 2. Abre `https://tareas.tudominio.com/`, entra con tu usuario (o tu correo) y la contraseña.
 3. Comprueba que el número de versión aparece en la barra lateral.
 

@@ -1,0 +1,19 @@
+// Variables Sass, mixins y puntos de corte compartidos. No emite CSS: quien los necesita los carga con `@use '<ruta>/styles/tokens' as *;`.
+
+$sidebar-width: 260px;
+$column-width: 280px;
+$radius: 6px;
+
+// Por debajo de $breakpoint-drawer la barra lateral pasa a ser un cajón que se abre desde la barra superior.
+$breakpoint-drawer: 860px;
+$breakpoint-compact: 600px;
+
+@mixin panel($radius: $radius) {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: $radius;
+}
+
+@mixin tint($percent) {
+    background: color-mix(in srgb, var(--accent) #{$percent}, transparent);
+}

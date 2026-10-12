@@ -77,7 +77,14 @@ const { error, guard } = useGuard();
 const modal = ref(null); // { task, phases }
 const loading = ref(true);
 const filterProject = ref('');
-const { search, assignee: filterAssignee, rows, sort, arrow, ariaSort } = useTaskTable(tasks, {
+const {
+    search,
+    assignee: filterAssignee,
+    rows,
+    sort,
+    arrow,
+    ariaSort,
+} = useTaskTable(tasks, {
     sortKey: 'priority',
     sorters: { ...TASK_SORTERS, phase_name: t => t.phase_name.toLowerCase(), created_at: t => t.created_at },
     matches: t => !filterProject.value || t.project_id === filterProject.value,
@@ -113,3 +120,62 @@ const projects = computed(() => {
 const roots = computed(() => store.children(null));
 const pct = p => (p.total_task_count ? Math.round((p.total_done_count / p.total_task_count) * 100) : 0);
 </script>
+
+<style scoped lang="scss">
+@use '../styles/tokens' as *;
+
+.grid td.overdue {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.section-title {
+    margin-top: 32px;
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+}
+
+.project-card {
+    @include panel(8px);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px;
+    color: var(--text);
+
+    &:hover {
+        border-color: var(--accent);
+    }
+
+    p {
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .progress {
+        height: 6px;
+        background: var(--line);
+        border-radius: 3px;
+        overflow: hidden;
+
+        div {
+            height: 100%;
+            background: var(--accent);
+        }
+    }
+}
+
+@media (max-width: $breakpoint-compact) {
+    .cards-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>

@@ -68,8 +68,12 @@ final class UserController
     public static function changePassword(array $p, array $in): void
     {
         $me = Auth::require();
+        $current = $in['current_password'] ?? '';
+        if (!is_string($current)) {
+            throw new HttpError(422, "El campo 'current_password' es inválido");
+        }
         $row = Db::one('SELECT password_hash FROM users WHERE id = ?', [$me['id']]);
-        if (!password_verify((string) ($in['current_password'] ?? ''), $row['password_hash'])) {
+        if (!password_verify($current, $row['password_hash'])) {
             throw new HttpError(422, 'La contraseña actual no es correcta');
         }
         // Subir la versión de credenciales cierra las demás sesiones; la actual se renueva y sigue activa.

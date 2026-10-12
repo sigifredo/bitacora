@@ -13,9 +13,12 @@ Options -Indexes
 
 # Cabeceras de seguridad. La aplicación solo carga recursos propios (sin CDN, sin scripts ni estilos en línea).
 <IfModule mod_headers.c>
+    Header always unset X-Powered-By
     Header always set X-Content-Type-Options "nosniff"
     Header always set Referrer-Policy "same-origin"
     Header always set X-Frame-Options "DENY"
+    # HSTS solo sobre HTTPS (la expresión también cubre el caso de HTTPS terminado por Apache); sin includeSubDomains para no afectar a otros subdominios del hosting.
+    Header always set Strict-Transport-Security "max-age=31536000" "expr=%{HTTPS} == 'on'"
     Header always set X-Robots-Tag "noindex, nofollow, noarchive"
     Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 </IfModule>

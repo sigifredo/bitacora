@@ -17,6 +17,14 @@ return [
         Suite::status(401, $none);
         Suite::same($bad['body'], $none['body'], 'mensaje de error');
     },
+    'auth: una contraseña que no es texto da 422 sin warnings' => function () {
+        $r = Suite::anonymous()->post('/api/auth/login', ['username' => 'tester', 'password' => ['x']]);
+        Suite::status(422, $r);
+        Suite::status(422, Suite::client()->put('/api/auth/password', ['current_password' => ['x'], 'new_password' => 'clave-nueva-1']));
+    },
+    'http: un cuerpo de más de 2 MB da 413' => function () {
+        Suite::status(413, Suite::client()->post('/api/projects', ['name' => 'x', 'description' => str_repeat('a', 2_200_000)]));
+    },
     'auth: login por correo' => function () {
         $r = Suite::anonymous()->post('/api/auth/login', ['username' => 'TESTER@example.com', 'password' => Suite::$admin['password']]);
         Suite::status(200, $r);

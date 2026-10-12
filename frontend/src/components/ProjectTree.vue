@@ -19,3 +19,53 @@ import { useCollapsed } from '../composables/useCollapsed.js';
 defineProps({ parentId: { type: Number, default: null } });
 const { collapsed, toggle } = useCollapsed();
 </script>
+
+<style scoped lang="scss">
+@use '../styles/tokens' as *;
+
+.tree {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    .tree {
+        padding-left: 14px;
+    }
+
+    .tree-row {
+        display: flex;
+        align-items: center;
+
+        a {
+            flex: 1;
+            padding: 3px 6px;
+            border-radius: 4px;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+
+            &.active {
+                @include tint(16%);
+                color: var(--accent);
+                font-weight: 600;
+            }
+            &.archived {
+                opacity: 0.5;
+            }
+        }
+    }
+
+    .caret {
+        width: 18px;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--muted);
+
+        &.hidden {
+            visibility: hidden;
+        }
+    }
+}
+</style>

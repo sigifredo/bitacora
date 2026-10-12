@@ -64,3 +64,70 @@ onBeforeUnmount(() => {
     if (opener && document.contains(opener)) opener.focus();
 });
 </script>
+
+<style scoped lang="scss">
+@use '../styles/tokens' as *;
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 8vh;
+    z-index: 10;
+}
+
+// El contenido llega por el slot y pertenece al componente que abre el modal: de ahí los :deep.
+.modal {
+    background: var(--panel);
+    border-radius: 10px;
+    width: min(560px, 94vw);
+    padding: 18px 20px;
+    max-height: 84vh;
+    overflow-y: auto;
+
+    h3 {
+        margin: 0;
+    }
+    > header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    :deep(footer) {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 8px;
+    }
+    :deep(.row) {
+        display: flex;
+        gap: 12px;
+
+        > * {
+            flex: 1;
+        }
+    }
+}
+
+@media (max-width: $breakpoint-compact) {
+    .overlay {
+        padding-top: 0;
+    }
+    .modal {
+        width: 100vw;
+        max-height: 100dvh;
+        min-height: 100dvh;
+        border-radius: 0;
+        padding: 14px;
+
+        :deep(.row) {
+            flex-direction: column;
+            gap: 0;
+        }
+    }
+}
+</style>

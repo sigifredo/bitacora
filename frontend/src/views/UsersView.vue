@@ -88,3 +88,14 @@ async function remove(u) {
     }
 }
 </script>
+
+<style scoped lang="scss">
+.grid {
+    tr.inactive {
+        opacity: 0.5;
+    }
+    td.end {
+        text-align: right;
+    }
+}
+</style>

@@ -27,6 +27,8 @@ final class Auth
     {
         $lifetime = self::lifetime();
         ini_set('session.gc_maxlifetime', (string) $lifetime);
+        // Rechaza ids de sesión que el servidor no emitió (evita fijación de sesión).
+        ini_set('session.use_strict_mode', '1');
         session_name('pa_session');
         session_set_cookie_params([
             'lifetime' => $lifetime,
@@ -111,7 +113,10 @@ final class Auth
     {
         // Se acepta el nombre de usuario o el correo.
         $login = strtolower(Validate::string($in, 'username', true, 190));
-        $password = (string) ($in['password'] ?? '');
+        $password = $in['password'] ?? '';
+        if (!is_string($password)) {
+            throw new HttpError(422, "El campo 'password' es inválido");
+        }
         $ip = substr($_SERVER['REMOTE_ADDR'] ?? '', 0, 45);
         self::assertNotThrottled($ip, $login);
         $row = Db::one('SELECT * FROM users WHERE username = ? OR email = ?', [$login, $login]);
@@ -160,7 +165,17 @@ final class Auth
     public static function logout(): void
     {
         $_SESSION = [];
+        $cookie = session_get_cookie_params();
         session_destroy();
+        // Expira la cookie en el navegador además de destruir la sesión del servidor.
+        setcookie(session_name(), '', [
+            'expires' => 1,
+            'path' => $cookie['path'],
+            'domain' => $cookie['domain'],
+            'secure' => $cookie['secure'],
+            'httponly' => $cookie['httponly'],
+            'samesite' => $cookie['samesite'],
+        ]);
         self::$user = null;
     }
 }

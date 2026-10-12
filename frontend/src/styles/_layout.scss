@@ -1,0 +1,26 @@
+@use 'tokens' as *;
+
+// Cabecera de página (ProjectView y UsersView).
+.page-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+
+    .actions {
+        display: flex;
+        gap: 6px;
+        flex: none;
+    }
+}
+
+@media (max-width: $breakpoint-compact) {
+    .page-head {
+        flex-wrap: wrap;
+
+        .actions {
+            flex-wrap: wrap;
+        }
+    }
+}

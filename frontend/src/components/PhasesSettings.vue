@@ -94,3 +94,45 @@ const reorder = (from, to) =>
         await api.reorderPhases(props.projectId, ids);
     });
 </script>
+
+<style scoped lang="scss">
+@use '../styles/tokens' as *;
+
+.settings {
+    max-width: 760px;
+
+    .phase-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 12px;
+    }
+    .grip {
+        cursor: grab;
+        color: var(--muted);
+    }
+    .name {
+        flex: 1;
+    }
+}
+
+.phase-list li,
+.phase-new {
+    @include panel;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 10px;
+    margin-bottom: 6px;
+}
+
+@media (max-width: $breakpoint-compact) {
+    .phase-list li,
+    .phase-new {
+        flex-wrap: wrap;
+
+        .name {
+            flex: 1 1 140px;
+        }
+    }
+}
+</style>

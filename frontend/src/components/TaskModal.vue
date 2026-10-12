@@ -98,3 +98,32 @@ const remove = () =>
         emit('deleted');
     });
 </script>
+
+<style scoped lang="scss">
+@use '../styles/tokens' as *;
+
+.checklist {
+    border: 1px solid var(--line);
+    border-radius: $radius;
+    margin: 0 0 12px;
+    padding: 6px 10px 10px;
+
+    legend {
+        padding: 0 4px;
+    }
+    .check-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 6px;
+
+        input:not([type='checkbox']) {
+            flex: 1;
+        }
+        input.done {
+            text-decoration: line-through;
+            color: var(--muted);
+        }
+    }
+}
+</style>

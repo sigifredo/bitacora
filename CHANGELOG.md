@@ -3,6 +3,34 @@
 Todos los cambios relevantes del proyecto se documentan aquí.
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); la versión vigente está en `backend/VERSION`.
 
+## [0.6.2] - 2026-10-11
+
+### Cambiado
+
+- Frontend: los estilos pasan de un único `src/style.scss` a una capa global en `src/styles/` (tema, base, formularios, insignias, cabecera de página y las primitivas compartidas `.toolbar` y `.grid`) y un bloque `<style scoped lang="scss">` en cada componente, con sus media queries al lado. Variables Sass, mixins y puntos de corte salen de `styles/_tokens.scss`. Sin cambios visuales ni de comportamiento.
+
+### Notas de actualización
+
+- Sin cambios de backend ni de esquema. Basta con sustituir el frontend; la versión se sube porque `backend/VERSION` es la única fuente que también usa la interfaz.
+
+## [0.6.1] - 2026-10-11
+
+### Añadido
+
+- `Strict-Transport-Security` (`max-age=31536000`, sin `includeSubDomains`) en `backend/public/.htaccess`, solo en respuestas sobre HTTPS.
+- Tope de 2 MiB para el cuerpo de las peticiones: por encima responde 413. Cubre con holgura el mayor campo legítimo (descripción de 65 000 caracteres multibyte).
+
+### Cambiado
+
+- `POST /api/auth/login` y `PUT /api/auth/password` responden 422 si `password` o `current_password` no son texto. Antes se convertían a la cadena `Array` con un warning de PHP que, con `display_errors` activo, podía mostrar rutas del servidor.
+- Las sesiones se inician con `session.use_strict_mode`: PHP rechaza ids de sesión que el servidor no emitió.
+- El logout expira también la cookie de sesión en el navegador, además de destruir la sesión en el servidor.
+- `.htaccess` elimina la cabecera `X-Powered-By`. Como el resto de cabeceras, requiere `mod_headers`.
+
+### Notas de actualización
+
+- Sin cambios de esquema. Basta con sustituir el backend y el frontend. Tras desplegar, comprobar con `curl -sI https://<dominio>/api/version` que aparece `Strict-Transport-Security` y no `X-Powered-By`.
+
 ## [0.6.0] - 2026-10-10
 
 ### Añadido

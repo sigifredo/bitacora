@@ -50,7 +50,7 @@ Despliegue en raíz o subcarpeta: el frontend toma el prefijo de `VITE_BASE` en 
 
 Las acciones asíncronas de la interfaz que pueden fallar van envueltas en `useGuard` (`composables/useGuard.js`), que expone `error` para mostrarlo y evita promesas rechazadas sin atender; las fechas «de hoy» salen de `dates.js` (hora local), nunca de `toISOString()`. Filtros y ordenamiento de las tablas de tareas viven en `composables/useTaskTable.js` (un único orden de prioridad: ▲ = urgente primero). `ProjectView` aplica los movimientos del tablero de forma optimista y descarta respuestas obsoletas con `latestOnly()`.
 
-Estilos en un único `style.scss`; los colores son propiedades CSS (`--bg`, `--accent`…) con modo oscuro por `prefers-color-scheme`, no variables Sass.
+Estilos: la capa global vive en `src/styles/` (`main.scss` carga los parciales: tema, base, formularios, badge, layout y las primitivas compartidas `.toolbar`/`.grid`) y todo lo demás en el `<style scoped lang='scss'>` del componente que lo usa, con sus media queries al lado. Variables Sass, mixins y breakpoints están en `styles/_tokens.scss` (sin salida CSS) y cada SFC los carga con `@use '../styles/tokens' as *;`. Los colores son propiedades CSS (`--bg`, `--accent`…) con modo oscuro por `prefers-color-scheme`, no variables Sass. El contenido que un componente recibe por slot (los formularios dentro de `Modal`) no hereda el ámbito de este: sus reglas van con `:deep()` o en el componente que lo declara.
 
 ## Convenciones
 

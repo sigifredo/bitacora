@@ -88,3 +88,129 @@ function drop(phaseId) {
     emit('move', task, phaseId, target);
 }
 </script>
+
+<style scoped lang="scss">
+@use '../styles/tokens' as *;
+
+.board {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    overflow-x: auto;
+    padding-bottom: 12px;
+}
+
+.column {
+    flex: 0 0 $column-width;
+    background: color-mix(in srgb, var(--line) 45%, var(--bg));
+    border-radius: 8px;
+    padding-bottom: 8px;
+    min-height: 120px;
+
+    &.drop-target {
+        outline: 2px dashed var(--accent);
+        outline-offset: -2px;
+    }
+
+    > header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 10px;
+        border-top: 3px solid;
+        border-radius: 8px 8px 0 0;
+
+        strong {
+            flex: 1;
+        }
+        .count {
+            color: var(--muted);
+        }
+    }
+
+    .cards {
+        padding: 0 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 40px;
+    }
+}
+
+.card {
+    @include panel;
+    padding: 8px 10px;
+    cursor: grab;
+
+    &:hover {
+        border-color: var(--accent);
+    }
+    &.ghost {
+        opacity: 0.35;
+    }
+
+    footer {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 6px;
+        font-size: 12px;
+    }
+
+    // Mover a la fase contigua sin arrastrar: visible con ratón encima o foco, y siempre en pantallas táctiles.
+    .card-move {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 6px;
+        opacity: 0;
+        transition: opacity 0.12s;
+
+        button {
+            padding: 0 10px;
+        }
+    }
+    &:hover .card-move,
+    &:focus-within .card-move {
+        opacity: 1;
+    }
+    @media (hover: none) {
+        .card-move {
+            opacity: 1;
+        }
+    }
+    .due.late {
+        color: var(--danger);
+        font-weight: 600;
+    }
+}
+
+.avatar {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: inline-grid;
+    place-items: center;
+    font-size: 10px;
+    text-transform: uppercase;
+}
+
+.drop-line {
+    height: 3px;
+    border-radius: 2px;
+    background: var(--accent);
+}
+
+@media (max-width: $breakpoint-compact) {
+    // Una columna casi a ancho completo, con la siguiente asomando para sugerir el desplazamiento.
+    .board {
+        scroll-snap-type: x proximity;
+        margin-inline: -12px;
+        padding-inline: 12px;
+    }
+    .column {
+        flex-basis: min($column-width, 82vw);
+        scroll-snap-align: start;
+    }
+}
+</style>

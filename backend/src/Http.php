@@ -11,6 +11,9 @@ final class HttpError extends RuntimeException
 
 final class Router
 {
+    /** Tamaño máximo del cuerpo de una petición (bytes); una descripción de 65 000 emojis escapada como JSON ocupa unos 780 KB. */
+    private const MAX_BODY = 2_097_152;
+
     /** @var array<int, array{string, string, callable}> */
     private array $routes = [];
 
@@ -47,9 +50,12 @@ final class Router
 
     public static function body(): array
     {
-        $raw = file_get_contents('php://input');
+        $raw = file_get_contents('php://input', false, null, 0, self::MAX_BODY + 1);
         if ($raw === false || $raw === '') {
             return [];
+        }
+        if (strlen($raw) > self::MAX_BODY) {
+            throw new HttpError(413, 'Petición demasiado grande');
         }
         $data = json_decode($raw, true);
         if (!is_array($data)) {

@@ -117,8 +117,16 @@ function latestOnly() {
 
 const phasesLoader = latestOnly();
 const tasksLoader = latestOnly();
-const loadPhases = () => phasesLoader(() => api.phases(pid.value), v => (phases.value = v));
-const loadTasks = () => tasksLoader(() => api.tasks(pid.value, includeChildren.value && view.value === 'table'), v => (tasks.value = v));
+const loadPhases = () =>
+    phasesLoader(
+        () => api.phases(pid.value),
+        v => (phases.value = v),
+    );
+const loadTasks = () =>
+    tasksLoader(
+        () => api.tasks(pid.value, includeChildren.value && view.value === 'table'),
+        v => (tasks.value = v),
+    );
 
 async function load() {
     try {
@@ -146,7 +154,11 @@ const reloadAll = () =>
 function withMove(list, id, phaseId, index) {
     const phase = phases.value.find(f => f.id === phaseId);
     const target = list.filter(t => t.phase_id === phaseId && t.id !== id).sort((a, b) => a.position - b.position);
-    target.splice(Math.min(index, target.length), 0, list.find(t => t.id === id));
+    target.splice(
+        Math.min(index, target.length),
+        0,
+        list.find(t => t.id === id),
+    );
     const position = new Map(target.map((t, i) => [t.id, i]));
     return list.map(t => {
         if (t.id === id) return { ...t, phase_id: phaseId, phase_name: phase.name, phase_color: phase.color, is_closed: phase.is_closed, position: position.get(id) };
@@ -194,3 +206,56 @@ const childCreated = p =>
 watch([includeChildren, view], () => guard(loadTasks));
 onMounted(load);
 </script>
+
+<style scoped lang="scss">
+@use '../styles/tokens' as *;
+
+.crumbs {
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 12px;
+
+    .chip {
+        @include panel(14px);
+        padding: 2px 10px;
+        color: var(--text);
+
+        small {
+            color: var(--muted);
+            margin-left: 4px;
+        }
+    }
+}
+
+.tabs {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+
+    button:not(.primary) {
+        border-color: transparent;
+        background: none;
+    }
+    button.active {
+        background: var(--panel);
+        border-color: var(--line);
+        font-weight: 600;
+    }
+}
+
+@media (max-width: $breakpoint-compact) {
+    .tabs {
+        flex-wrap: wrap;
+    }
+}
+</style>
