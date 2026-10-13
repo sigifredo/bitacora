@@ -7,6 +7,10 @@
             <option value="">Todos los proyectos</option>
             <option v-for="p in projects" :key="p.id" :value="p.id">{{ p.name }}</option>
         </select>
+        <select v-model="filterPhase">
+            <option value="">Todas las fases</option>
+            <option v-for="n in phaseNames" :key="n" :value="n">{{ n }}</option>
+        </select>
         <select v-model="filterAssignee">
             <option value="">Todos los responsables</option>
             <option value="none">Sin asignar</option>
@@ -77,6 +81,7 @@ const { error, guard } = useGuard();
 const modal = ref(null); // { task, phases }
 const loading = ref(true);
 const filterProject = ref('');
+const filterPhase = ref('');
 const {
     search,
     assignee: filterAssignee,
@@ -87,7 +92,7 @@ const {
 } = useTaskTable(tasks, {
     sortKey: 'priority',
     sorters: { ...TASK_SORTERS, phase_name: t => t.phase_name.toLowerCase(), created_at: t => t.created_at },
-    matches: t => !filterProject.value || t.project_id === filterProject.value,
+    matches: t => (!filterProject.value || t.project_id === filterProject.value) && (!filterPhase.value || t.phase_name === filterPhase.value),
     tieBreak: (a, b) => compare(a.created_at, b.created_at) || a.id - b.id,
 });
 
@@ -116,6 +121,9 @@ const projects = computed(() => {
     const ids = new Set(tasks.value.map(t => t.project_id));
     return store.projects.filter(p => ids.has(p.id));
 });
+
+// Las fases son por proyecto: se filtra por nombre, que se repite entre proyectos hermanos.
+const phaseNames = computed(() => [...new Set(tasks.value.map(t => t.phase_name))].sort((a, b) => compare(a.toLowerCase(), b.toLowerCase())));
 
 const roots = computed(() => store.children(null));
 const pct = p => (p.total_task_count ? Math.round((p.total_done_count / p.total_task_count) * 100) : 0);

@@ -3,6 +3,16 @@
 Todos los cambios relevantes del proyecto se documentan aquí.
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); la versión vigente está en `backend/VERSION`.
 
+## [0.7.0] - 2026-10-13
+
+### Añadido
+
+- Página principal: filtro por fase en la lista de tareas pendientes. Filtra por nombre de fase (las fases son por proyecto y su nombre se repite entre proyectos) y se combina con los filtros de proyecto, responsable y búsqueda.
+
+### Notas de actualización
+
+- Sin cambios de backend ni de esquema. Basta con sustituir el frontend; la versión se sube porque `backend/VERSION` es la única fuente que también usa la interfaz.
+
 ## [0.6.2] - 2026-10-11
 
 ### Cambiado
