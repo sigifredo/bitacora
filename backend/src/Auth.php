@@ -26,6 +26,15 @@ final class Auth
     public static function start(string $basePath = '', bool $write = false): void
     {
         $lifetime = self::lifetime();
+        // Directorio propio: el compartido del hosting lo purga el servidor con el gc_maxlifetime de su php.ini
+        // (24 min por defecto), que ignora este ini_set, y con read_and_close el archivo no se renueva.
+        $dir = self::sessionDir();
+        if ($dir !== null) {
+            ini_set('session.save_path', $dir);
+            // El GC interno de PHP (apagado en Debian) sí respeta el ini_set sobre un directorio propio.
+            ini_set('session.gc_probability', '1');
+            ini_set('session.gc_divisor', '100');
+        }
         ini_set('session.gc_maxlifetime', (string) $lifetime);
         // Rechaza ids de sesión que el servidor no emitió (evita fijación de sesión).
         ini_set('session.use_strict_mode', '1');
@@ -80,6 +89,21 @@ final class Auth
     private static function lifetime(): int
     {
         return max(1, (int) Db::env('SESSION_LIFETIME', '604800'));
+    }
+
+    /** Directorio de sesiones (SESSION_PATH o `storage/sessions` junto a `src/`, fuera de la raíz web); null si no se puede usar. */
+    private static function sessionDir(): ?string
+    {
+        $dir = Db::env('SESSION_PATH', dirname(__DIR__) . '/storage/sessions');
+        if (!is_dir($dir) && !@mkdir($dir, 0700, true) && !is_dir($dir)) {
+            error_log("No se pudo crear el directorio de sesiones $dir; se usa el predeterminado de PHP");
+            return null;
+        }
+        if (!is_writable($dir)) {
+            error_log("El directorio de sesiones $dir no es escribible; se usa el predeterminado de PHP");
+            return null;
+        }
+        return $dir;
     }
 
     private static function isHttps(): bool

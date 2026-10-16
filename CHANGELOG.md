@@ -3,6 +3,16 @@
 Todos los cambios relevantes del proyecto se documentan aquí.
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); la versión vigente está en `backend/VERSION`.
 
+## [0.7.1] - 2026-10-15
+
+### Corregido
+
+- La sesión se cerraba a los 25 a 55 minutos del login aunque `SESSION_LIFETIME` fuera de 7 días. Las sesiones vivían en el directorio compartido de PHP, que el servidor purga con el `gc_maxlifetime` de su `php.ini` (24 min por defecto, ignora el `ini_set` de la aplicación), y con `read_and_close` el archivo no se renueva. Ahora se guardan en `storage/sessions/` junto a `src/` (fuera de la raíz web, creado en la primera petición) o en `SESSION_PATH` si se define, con GC propio acorde a `SESSION_LIFETIME`.
+
+### Notas de actualización
+
+- Sin cambios de esquema. Las sesiones abiertas antes de actualizar se pierden una vez (hay que volver a entrar). La carpeta `casiopea/` del hosting debe permitir crear `storage/` al usuario de PHP; si no, se registra un aviso en `error_log` y se usa el directorio predeterminado.
+
 ## [0.7.0] - 2026-10-13
 
 ### Añadido
