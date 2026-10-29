@@ -2,13 +2,13 @@
     <template v-if="auth.user">
         <header class="topbar">
             <button class="icon" :aria-expanded="menuOpen" aria-controls="sidebar" aria-label="Abrir menú" @click="menuOpen = !menuOpen">☰</button>
-            <router-link to="/" class="brand"><img :src="logo" alt="" />casiopea</router-link>
+            <router-link to="/" class="brand"><img :src="logo" alt="" />bitácora</router-link>
         </header>
         <div v-if="menuOpen" class="sidebar-backdrop" @click="menuOpen = false" />
         <aside id="sidebar" class="sidebar" :class="{ open: menuOpen }">
             <router-link to="/" class="brand">
                 <img :src="logo" alt="" />
-                casiopea <small class="version">v{{ version }}</small></router-link
+                bitácora <small class="version">v{{ version }}</small></router-link
             >
             <router-link to="/" exact-active-class="active" class="nav-pending">Tareas pendientes</router-link>
             <div class="sidebar-head">
@@ -53,7 +53,7 @@ const logo = `${import.meta.env.BASE_URL}logo.svg`;
 
 // Tras el login el título de la pestaña incluye la versión.
 watchEffect(() => {
-    document.title = auth.user ? `Casiopea v${version}` : 'Casiopea';
+    document.title = auth.user ? `Bitácora v${version}` : 'Bitácora';
 });
 
 // Navegar o abrir un modal desde el cajón lo cierra.

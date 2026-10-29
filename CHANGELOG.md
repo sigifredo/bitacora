@@ -3,6 +3,18 @@
 Todos los cambios relevantes del proyecto se documentan aquí.
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); la versión vigente está en `backend/VERSION`.
 
+## [0.8.0] - 2026-10-28
+
+### Cambiado
+
+- La aplicación pasa a llamarse **Bitácora** (título de la pestaña, barra lateral, pantalla de login y documentación). Los identificadores técnicos siguen el nombre sin tilde: base de datos y usuario por defecto `bitacora_db` / `bitacora`, variable `BITACORA_TEST_DB`, carpeta de despliegue `bitacora/`, paquete `bitacora-frontend` y zips `bitacora-backend-*.zip` / `bitacora-frontend-*.zip`.
+
+### Notas de actualización
+
+- Sin cambios de esquema. Un `.env` existente conserva sus valores de `DB_NAME` y `DB_USER`; solo cambian los valores por defecto cuando faltan. Quien use la variable `CASIOPEA_TEST_DB` debe renombrarla a `BITACORA_TEST_DB`.
+- Si el despliegue está en una carpeta (`/casiopea/`), hay que recompilar con el nuevo `VITE_BASE` y la carpeta del hosting puede conservar su nombre mientras la raíz del documento y el prefijo coincidan.
+- El estado plegado del árbol de la barra lateral (clave de `localStorage`) se reinicia una vez.
+
 ## [0.7.1] - 2026-10-15
 
 ### Corregido

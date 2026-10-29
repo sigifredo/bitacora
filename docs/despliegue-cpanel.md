@@ -1,18 +1,18 @@
 # Despliegue en cPanel
 
-Esta guía instala Casiopea en un subdominio (por ejemplo `tareas.tudominio.com`) de un hosting con cPanel. Los archivos necesarios están en `deploy/`:
+Esta guía instala Bitácora en un subdominio (por ejemplo `tareas.tudominio.com`) de un hosting con cPanel. Los archivos necesarios están en `deploy/`:
 
 | Archivo                       | Contenido                                                                                            |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `casiopea-backend-0.7.1.zip`  | API en PHP, `database/schema.sql`, `database/seed-admin.sql` y `public/index.php` con su `.htaccess` |
-| `casiopea-frontend-0.7.1.zip` | Interfaz compilada (`index.html` y `assets/`) para la raíz de un dominio o subdominio                |
+| `bitacora-backend-0.8.0.zip`  | API en PHP, `database/schema.sql`, `database/seed-admin.sql` y `public/index.php` con su `.htaccess` |
+| `bitacora-frontend-0.8.0.zip` | Interfaz compilada (`index.html` y `assets/`) para la raíz de un dominio o subdominio                |
 
 `deploy/` no está en git: los zips se generan con los comandos de la sección [Generar los zips](#generar-los-zips). El número del nombre es el de `backend/VERSION`.
 
 Estructura final en el servidor (`USUARIO` es tu usuario de cPanel):
 
 ```
-/home/USUARIO/casiopea/
+/home/USUARIO/bitacora/
     .env                 <- lo creas tú, nunca dentro de public
     VERSION
     database/  src/
@@ -35,14 +35,14 @@ Solo `public/` es accesible desde Internet. El código, los SQL y las credencial
 
 1. En cPanel abre **Administrador de archivos**.
 2. Ve a tu carpeta personal `/home/USUARIO/` (fuera de `public_html`).
-3. Pulsa **Cargar** y sube `casiopea-backend-0.7.1.zip`.
-4. Selecciona el zip y pulsa **Extraer**. Se crea `/home/USUARIO/casiopea/`.
+3. Pulsa **Cargar** y sube `bitacora-backend-0.8.0.zip`.
+4. Selecciona el zip y pulsa **Extraer**. Se crea `/home/USUARIO/bitacora/`.
 5. Borra el zip.
 
 ### 2. Subir y descomprimir el frontend
 
-1. Entra en `/home/USUARIO/casiopea/public/`.
-2. Sube `casiopea-frontend-0.7.1.zip` y extráelo ahí mismo. Deben quedar `index.html` y `assets/` junto a `index.php`.
+1. Entra en `/home/USUARIO/bitacora/public/`.
+2. Sube `bitacora-frontend-0.8.0.zip` y extráelo ahí mismo. Deben quedar `index.html` y `assets/` junto a `index.php`.
 3. Borra el zip.
 
 El Administrador de archivos oculta los archivos que empiezan por punto. En **Configuración** (arriba a la derecha) activa **Mostrar archivos ocultos** para ver `.htaccess` y, más adelante, `.env`.
@@ -50,20 +50,20 @@ El Administrador de archivos oculta los archivos que empiezan por punto. En **Co
 ### 3. Crear la base de datos
 
 1. En cPanel abre **Bases de datos MySQL**.
-2. Crea una base (por ejemplo `casiopea`). cPanel le antepone tu usuario: queda `USUARIO_casiopea`.
+2. Crea una base (por ejemplo `bitacora`). cPanel le antepone tu usuario: queda `USUARIO_bitacora`.
 3. Crea un usuario de base de datos con una contraseña larga y anótala.
 4. En **Agregar usuario a la base de datos**, asocia ese usuario con esa base y marca **Todos los privilegios**.
 
 ### 4. Configurar `.env`
 
-1. En `/home/USUARIO/casiopea/` copia `.env.example` como `.env`.
+1. En `/home/USUARIO/bitacora/` copia `.env.example` como `.env`.
 2. Edítalo con los datos del paso anterior:
 
 ```
 DB_HOST=localhost
 DB_PORT=3306
-DB_NAME=USUARIO_casiopea
-DB_USER=USUARIO_casiopea
+DB_NAME=USUARIO_bitacora
+DB_USER=USUARIO_bitacora
 DB_PASS=la_contraseña_del_paso_3
 ```
 
@@ -73,7 +73,7 @@ Sin comillas ni espacios alrededor del `=`. Si la contraseña tiene caracteres e
 
 1. En cPanel abre **Dominios** (o **Subdominios**, según la versión).
 2. Crea el subdominio, por ejemplo `tareas.tudominio.com`.
-3. En **Raíz del documento** escribe `casiopea/public` (la ruta relativa a tu carpeta personal). No dejes la que propone cPanel (`public_html/tareas`).
+3. En **Raíz del documento** escribe `bitacora/public` (la ruta relativa a tu carpeta personal). No dejes la que propone cPanel (`public_html/tareas`).
 
 ### 6. Elegir la versión de PHP
 
@@ -86,7 +86,7 @@ En **SSL/TLS Status** ejecuta **Run AutoSSL** para el subdominio y espera a que 
 
 ### 8. Crear las tablas
 
-El servidor no necesita shell: todo se hace en **phpMyAdmin**. Selecciona la base de datos vacía del paso 3, ve a **Importar** y sube `database/schema.sql` (está en el zip del backend, en `casiopea/database/`; descárgalo desde el Administrador de archivos o usa el del repositorio). Crea el esquema completo. Si alguna tabla ya existe, la importación falla: vacía la base antes de repetirla.
+El servidor no necesita shell: todo se hace en **phpMyAdmin**. Selecciona la base de datos vacía del paso 3, ve a **Importar** y sube `database/schema.sql` (está en el zip del backend, en `bitacora/database/`; descárgalo desde el Administrador de archivos o usa el del repositorio). Crea el esquema completo. Si alguna tabla ya existe, la importación falla: vacía la base antes de repetirla.
 
 ### 9. Crear el primer administrador
 
@@ -99,7 +99,7 @@ El servidor no necesita shell: todo se hace en **phpMyAdmin**. Selecciona la bas
 
 ### 10. Probar
 
-1. Abre `https://tareas.tudominio.com/api/version`. Debe responder `{"version":"0.7.1"}` (el número de `backend/VERSION`).
+1. Abre `https://tareas.tudominio.com/api/version`. Debe responder `{"version":"0.8.0"}` (el número de `backend/VERSION`).
 2. Abre `https://tareas.tudominio.com/`, entra con tu usuario (o tu correo) y la contraseña.
 3. Comprueba que el número de versión aparece en la barra lateral.
 
@@ -109,20 +109,20 @@ El servidor no necesita shell: todo se hace en **phpMyAdmin**. Selecciona la bas
 | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | Error 500 en `/api/...` con `could not find driver` en el log         | Falta la extensión `pdo_mysql` en esa versión de PHP (paso 6)                                                         |
 | Error 500 y `Access denied for user`                                  | Datos incorrectos en `.env` o usuario no asociado a la base (pasos 3 y 4)                                             |
-| `/api/version` da 404                                                 | La raíz del subdominio no es `casiopea/public` o `.htaccess` no está (pasos 2 y 5)                                    |
+| `/api/version` da 404                                                 | La raíz del subdominio no es `bitacora/public` o `.htaccess` no está (pasos 2 y 5)                                    |
 | La página carga pero las rutas como `/projects/3` dan 404 al recargar | `.htaccess` no se subió o `mod_rewrite` desactivado: pide al hosting que lo active                                    |
 | El login responde bien pero la sesión se pierde                       | Entras por HTTP en lugar de HTTPS, o por otro dominio distinto al configurado                                         |
 | Pantalla en blanco                                                    | Abre la consola del navegador. Casi siempre el `index.html` y `assets/` quedaron en una carpeta distinta de `public/` |
 
-Los errores de PHP quedan en `error_log`, dentro de `casiopea/public/` o en **Errores** de cPanel.
+Los errores de PHP quedan en `error_log`, dentro de `bitacora/public/` o en **Errores** de cPanel.
 
 ## Actualizar el código
 
 El esquema no se actualiza: no hay migraciones. Esta sección solo cubre el código y vale mientras la versión nueva no cambie `schema.sql` (el `CHANGELOG.md` lo indica).
 
 1. Haz una copia de seguridad de la base de datos con phpMyAdmin (**Exportar**).
-2. Sube y extrae el nuevo zip del backend sobre `casiopea/`, sin tocar `.env`. El zip no lo incluye, así que no se sobrescribe.
-3. Sube y extrae el nuevo zip del frontend en `casiopea/public/`. Los archivos de `assets/` cambian de nombre con cada build, así que conviene borrar antes la carpeta `assets/` vieja.
+2. Sube y extrae el nuevo zip del backend sobre `bitacora/`, sin tocar `.env`. El zip no lo incluye, así que no se sobrescribe.
+3. Sube y extrae el nuevo zip del frontend en `bitacora/public/`. Los archivos de `assets/` cambian de nombre con cada build, así que conviene borrar antes la carpeta `assets/` vieja.
 4. Comprueba `/api/version`.
 
 Opcionalmente, el `.env` admite `SESSION_LIFETIME` (segundos de vigencia de la sesión), `LOGIN_MAX_PER_LOGIN` y `LOGIN_MAX_PER_IP` (ver `.env.example`).
@@ -134,11 +134,11 @@ Desde la raíz del repositorio (necesita `zip` y `pnpm`):
 ```bash
 V=$(cat backend/VERSION)
 pnpm --dir frontend build
-rm -rf deploy/stage && mkdir -p deploy/stage/casiopea/public
-cp -r backend/VERSION backend/.env.example backend/database backend/src deploy/stage/casiopea/
-cp backend/public/index.php backend/public/.htaccess deploy/stage/casiopea/public/
-(cd deploy/stage && zip -qr ../casiopea-backend-$V.zip casiopea)
-(cd frontend/dist && zip -qr ../../deploy/casiopea-frontend-$V.zip .)
+rm -rf deploy/stage && mkdir -p deploy/stage/bitacora/public
+cp -r backend/VERSION backend/.env.example backend/database backend/src deploy/stage/bitacora/
+cp backend/public/index.php backend/public/.htaccess deploy/stage/bitacora/public/
+(cd deploy/stage && zip -qr ../bitacora-backend-$V.zip bitacora)
+(cd frontend/dist && zip -qr ../../deploy/bitacora-frontend-$V.zip .)
 rm -rf deploy/stage
 ```
 
@@ -146,4 +146,4 @@ El zip del backend no incluye `.env`, así que una actualización no lo sobrescr
 
 ## Instalar en una carpeta en vez de un subdominio
 
-El zip del frontend está compilado para la raíz de un dominio. Servirlo desde una carpeta (por ejemplo `https://tudominio.com/casiopea/`) exige recompilar el frontend con `VITE_BASE=/casiopea/`. Además, `public/index.php` busca `src/` y `.env` en la carpeta superior a `public/`, así que habría que dejar `public/` en `public_html/casiopea/` y el resto en un lugar que `index.php` pueda alcanzar, lo que hoy requiere un pequeño ajuste del código. El subdominio evita todo eso y es la opción recomendada.
+El zip del frontend está compilado para la raíz de un dominio. Servirlo desde una carpeta (por ejemplo `https://tudominio.com/bitacora/`) exige recompilar el frontend con `VITE_BASE=/bitacora/`. Además, `public/index.php` busca `src/` y `.env` en la carpeta superior a `public/`, así que habría que dejar `public/` en `public_html/bitacora/` y el resto en un lugar que `index.php` pueda alcanzar, lo que hoy requiere un pequeño ajuste del código. El subdominio evita todo eso y es la opción recomendada.

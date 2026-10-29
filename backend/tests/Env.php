@@ -7,8 +7,8 @@ final class Env
     /** Nombre de la base de pruebas; aborta si coincidiera con la de desarrollo. */
     public static function testDatabase(): string
     {
-        $dev = Db::env('DB_NAME', 'casiopea_db');
-        $test = Db::env('CASIOPEA_TEST_DB', 'project_admin');
+        $dev = Db::env('DB_NAME', 'bitacora_db');
+        $test = Db::env('BITACORA_TEST_DB', 'project_admin');
         if ($test === $dev || !preg_match('/^[A-Za-z0-9_]+$/', $test)) {
             fwrite(STDERR, "La base de pruebas ($test) no puede ser la de desarrollo ($dev).\n");
             exit(2);
