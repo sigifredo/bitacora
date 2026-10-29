@@ -1,4 +1,4 @@
--- Casiopea: esquema completo, única fuente de verdad de la base de datos.
+-- Bitácora: esquema completo, única fuente de verdad de la base de datos.
 -- Para una base de datos VACÍA, en MariaDB 10.5+ o MySQL 8.0+. No crea la base ni el usuario de la base
 -- ni ningún usuario de la aplicación (ver seed-admin.sql). Importar con phpMyAdmin (Importar) o:
 -- mysql -u USUARIO -p NOMBRE_BD < schema.sql

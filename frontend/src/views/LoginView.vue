@@ -2,7 +2,7 @@
     <div class="login">
         <form @submit.prevent="submit">
             <img class="logo" :src="logo" alt="" />
-            <h1>casiopea</h1>
+            <h1>bitácora</h1>
             <label>Usuario<input v-model="form.username" required autofocus autocomplete="username" /></label>
             <label>Contraseña<input type="password" v-model="form.password" required autocomplete="current-password" /></label>
             <p v-if="error" class="error">{{ error }}</p>

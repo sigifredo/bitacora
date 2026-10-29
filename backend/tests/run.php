@@ -4,7 +4,7 @@ declare(strict_types=1);
 // Uso: php backend/tests/run.php [filtro]
 // Pruebas de integración de la API contra una base APARTE (nunca la de DB_NAME): se recrea el esquema
 // desde database/schema.sql, se levanta el servidor embebido y se lanzan peticiones HTTP reales.
-// Base de pruebas: variable CASIOPEA_TEST_DB (por defecto `project_admin`, sobre la que el usuario de
+// Base de pruebas: variable BITACORA_TEST_DB (por defecto `project_admin`, sobre la que el usuario de
 // desarrollo tiene permisos). El usuario de la base debe poder crearla o ya tenerla.
 $root = dirname(__DIR__);
 foreach (['Db', 'Http', 'Auth'] as $f) {

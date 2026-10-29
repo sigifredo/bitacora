@@ -1,6 +1,6 @@
 import { reactive } from 'vue';
 
-const KEY = 'casiopea.tree.collapsed';
+const KEY = 'bitacora.tree.collapsed';
 
 // El almacenamiento puede fallar (modo privado, datos bloqueados): la interfaz funciona igual sin recordar.
 function load() {

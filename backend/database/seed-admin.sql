@@ -1,4 +1,4 @@
--- Casiopea: primer usuario administrador, para instalar sin shell (phpMyAdmin > SQL o Importar).
+-- Bitácora: primer usuario administrador, para instalar sin shell (phpMyAdmin > SQL o Importar).
 -- Ejecutar DESPUÉS de schema.sql, tras sustituir los valores marcados con TU_...
 -- El hash se genera en tu equipo, con la contraseña elegida (entre comillas simples en la shell):
 --   php -r "echo password_hash('TU_CONTRASEÑA', PASSWORD_BCRYPT, ['cost' => 10]), PHP_EOL;"

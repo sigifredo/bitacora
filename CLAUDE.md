@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Casiopea: gestor de proyectos personales (tipo OpenProject): proyectos con subproyectos ilimitados, tareas, fases de kanban configurables, vistas tablero y tabla, usuarios con roles. PHP 8.3 (versión de producción; el entorno de desarrollo tiene 8.4, no usar sintaxis ni funciones exclusivas de 8.4) sin dependencias (sin Composer) + Vue 3/Vite/SCSS + MariaDB. La documentación de usuario y los textos de la interfaz están en español.
+Bitácora: gestor de proyectos personales (tipo OpenProject): proyectos con subproyectos ilimitados, tareas, fases de kanban configurables, vistas tablero y tabla, usuarios con roles. PHP 8.3 (versión de producción; el entorno de desarrollo tiene 8.4, no usar sintaxis ni funciones exclusivas de 8.4) sin dependencias (sin Composer) + Vue 3/Vite/SCSS + MariaDB. La documentación de usuario y los textos de la interfaz están en español.
 
 ## Comandos
 
@@ -14,12 +14,12 @@ php -S 127.0.0.1:8000 -t backend/public backend/public/index.php
 
 # Frontend (pnpm, no npm)
 cd frontend && pnpm install
-pnpm dev      # :5173; por defecto el proxy de /api apunta a Apache (http://localhost/casiopea/index.php)
+pnpm dev      # :5173; por defecto el proxy de /api apunta a Apache (http://localhost/bitacora/index.php)
 API_TARGET=http://127.0.0.1:8000 API_PREFIX= pnpm dev   # proxy hacia el servidor embebido de PHP
 pnpm build
 ```
 
-No hay linter configurado. Pruebas de integración de la API: `php backend/tests/run.php [filtro]` (el filtro es un texto del nombre de la prueba). Usan una base aparte (`CASIOPEA_TEST_DB`, por defecto `project_admin`; se aborta si coincide con `DB_NAME`), que se recrea desde `database/schema.sql` en cada ejecución, y un servidor embebido propio con varios workers. Cada prueba es una closure en `backend/tests/cases/*.php` que devuelve un arreglo `nombre => closure`; `Suite` ofrece aserciones y helpers (`project`, `task`, `phases`) y `Client` un cliente HTTP con cookies. Un cambio de esquema se hace en `schema.sql`, porque las pruebas parten de él. Además: `php -l` por archivo y `pnpm build` (el frontend no tiene pruebas automáticas).
+No hay linter configurado. Pruebas de integración de la API: `php backend/tests/run.php [filtro]` (el filtro es un texto del nombre de la prueba). Usan una base aparte (`BITACORA_TEST_DB`, por defecto `project_admin`; se aborta si coincide con `DB_NAME`), que se recrea desde `database/schema.sql` en cada ejecución, y un servidor embebido propio con varios workers. Cada prueba es una closure en `backend/tests/cases/*.php` que devuelve un arreglo `nombre => closure`; `Suite` ofrece aserciones y helpers (`project`, `task`, `phases`) y `Client` un cliente HTTP con cookies. Un cambio de esquema se hace en `schema.sql`, porque las pruebas parten de él. Además: `php -l` por archivo y `pnpm build` (el frontend no tiene pruebas automáticas).
 
 pnpm 11 bloquea scripts de instalación: los builds permitidos (`esbuild`, `@parcel/watcher`) están en `frontend/pnpm-workspace.yaml` (`allowBuilds`). Una dependencia nueva con postinstall hay que añadirla ahí.
 
