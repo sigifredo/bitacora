@@ -4,3 +4,5 @@ backend/.env
 backend/storage/
 deploy/
 .DS_Store
+tmp/
+*.apk
