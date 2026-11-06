@@ -61,7 +61,13 @@ class Api(context: Context) {
     /** Dirección del servidor, con el prefijo de despliegue si lo hay (p. ej. `https://host/bitacora`). */
     var serverUrl: String
         get() = prefs.getString("server", "") ?: ""
-        set(value) = prefs.edit().putString("server", value.trim().trimEnd('/')).apply()
+        set(value) = prefs.edit().putString("server", normalize(value)).apply()
+
+    // Sin esquema (`midominio.com/bitacora`) la librería de red lanza una excepción: se asume HTTPS.
+    private fun normalize(value: String): String {
+        val v = value.trim().trimEnd('/')
+        return if (v.isEmpty() || v.contains("://")) v else "https://$v"
+    }
 
     /** Se invoca ante un 401 fuera del login, para volver a la pantalla de acceso. */
     var onUnauthorized: () -> Unit = {}
@@ -70,9 +76,9 @@ class Api(context: Context) {
 
     private suspend fun request(method: String, path: String, body: JSONObject? = null): Any = withContext(Dispatchers.IO) {
         if (serverUrl.isEmpty()) throw ApiException("Indica la dirección del servidor")
-        val builder = Request.Builder().url(serverUrl + path).header("X-Requested-With", "fetch")
-        builder.method(method, if (method == "GET") null else (body?.toString() ?: "").toRequestBody(json))
         val (status, text) = try {
+            val builder = Request.Builder().url(normalize(serverUrl) + path).header("X-Requested-With", "fetch")
+            builder.method(method, if (method == "GET") null else (body?.toString() ?: "").toRequestBody(json))
             client.newCall(builder.build()).execute().use { it.code to (it.body?.string() ?: "") }
         } catch (e: IllegalArgumentException) {
             throw ApiException("Dirección del servidor no válida")

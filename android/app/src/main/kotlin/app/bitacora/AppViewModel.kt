@@ -13,6 +13,7 @@ import app.bitacora.data.Project
 import app.bitacora.data.Task
 import app.bitacora.data.TaskInput
 import app.bitacora.data.User
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
@@ -42,8 +43,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 try {
                     user = api.me()
                     loadInitial()
-                } catch (_: ApiException) {
-                    // sin sesión: se muestra el login
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    // sin sesión o servidor inalcanzable: se muestra el login
                 }
             }
             ready = true
@@ -66,6 +69,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 block()
             } catch (e: ApiException) {
                 error = e.message
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Cualquier otro fallo (respuesta inesperada, etc.) se muestra en lugar de cerrar la app.
+                error = e.message ?: "Error inesperado"
             } finally {
                 loading = false
             }
@@ -78,9 +86,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun login(server: String, username: String, password: String) = guard {
+        // El servidor solo se recuerda si el acceso funciona; así un error de escritura no queda como valor por defecto.
+        val previous = api.serverUrl
         api.serverUrl = server
         api.clearSession()
-        user = api.login(username, password)
+        try {
+            user = api.login(username, password)
+        } catch (e: ApiException) {
+            api.serverUrl = previous
+            throw e
+        }
         loadInitial()
     }
 
