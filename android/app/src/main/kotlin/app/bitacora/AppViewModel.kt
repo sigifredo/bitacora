@@ -33,6 +33,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var tasks by mutableStateOf<List<Task>>(emptyList())
     var includeChildren by mutableStateOf(false)
 
+    /** Tareas de todos los proyectos que no están en una fase cerrada (pantalla «Pendientes»). */
+    var pending by mutableStateOf<List<Task>>(emptyList())
+
+    /** Tarea pendiente en edición junto con las fases de su proyecto (cada proyecto tiene las suyas). */
+    var pendingEdit by mutableStateOf<Pair<Task, List<Phase>>?>(null)
+
     // Descarta respuestas de una carga anterior si el usuario ya abrió otro proyecto.
     private var loadSeq = 0
 
@@ -59,6 +65,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         projects = emptyList()
         phases = emptyList()
         tasks = emptyList()
+        pending = emptyList()
+        pendingEdit = null
     }
 
     /** Ejecuta una acción de red mostrando su fallo en `error` en lugar de dejar la excepción sin atender. */
@@ -83,6 +91,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun loadInitial() {
         projects = api.projects()
         users = api.users()
+        pending = api.pendingTasks()
     }
 
     fun login(server: String, username: String, password: String) = guard {
@@ -104,7 +113,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         resetSession()
     }
 
-    fun refreshProjects() = guard { projects = api.projects() }
+    fun refreshHome() = guard {
+        projects = api.projects()
+        pending = api.pendingTasks()
+    }
+
+    fun editPending(task: Task) = guard { pendingEdit = task to api.phases(task.projectId) }
 
     fun openProject(id: Int?) {
         currentProjectId = id
@@ -133,40 +147,35 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun saveTask(taskId: Int?, input: TaskInput, onDone: () -> Unit) {
-        val id = currentProjectId ?: return
-        guard {
-            api.saveTask(id, taskId, input)
-            reloadNow(id)
-            onDone()
-        }
+    fun saveTask(projectId: Int, taskId: Int?, input: TaskInput, onDone: () -> Unit) = guard {
+        api.saveTask(projectId, taskId, input)
+        refreshAfterChange(projectId)
+        onDone()
     }
 
-    fun moveTask(task: Task, phaseId: Int) {
-        val id = currentProjectId ?: return
-        guard {
-            // Al final de la fase destino: la posición es el número de tareas que ya tiene.
-            api.moveTask(task.id, phaseId, tasks.count { it.phaseId == phaseId })
-            reloadNow(id)
-        }
+    fun moveTask(task: Task, phaseId: Int) = guard {
+        // Al final de la fase destino: la posición es el número de tareas que ya tiene.
+        api.moveTask(task.id, phaseId, tasks.count { it.phaseId == phaseId })
+        refreshAfterChange(task.projectId)
     }
 
-    fun deleteTask(task: Task, onDone: () -> Unit) {
-        val id = currentProjectId ?: return
-        guard {
-            api.deleteTask(task.id)
-            reloadNow(id)
-            onDone()
-        }
+    fun deleteTask(task: Task, onDone: () -> Unit) = guard {
+        api.deleteTask(task.id)
+        refreshAfterChange(task.projectId)
+        onDone()
     }
 
-    private suspend fun reloadNow(projectId: Int) {
-        val p = api.phases(projectId)
-        val t = api.tasks(projectId, includeChildren)
+    /** Tras un cambio se recargan el proyecto abierto (si es ese), la lista de pendientes y el progreso. */
+    private suspend fun refreshAfterChange(projectId: Int) {
         if (projectId == currentProjectId) {
-            phases = p
-            tasks = t
+            val p = api.phases(projectId)
+            val t = api.tasks(projectId, includeChildren)
+            if (projectId == currentProjectId) {
+                phases = p
+                tasks = t
+            }
         }
+        pending = api.pendingTasks()
         projects = api.projects()
     }
 }

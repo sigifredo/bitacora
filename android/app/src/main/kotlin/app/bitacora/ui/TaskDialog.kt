@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import app.bitacora.AppViewModel
 import app.bitacora.data.ChecklistItem
 import app.bitacora.data.PRIORITIES
+import app.bitacora.data.Phase
 import app.bitacora.data.Task
 import app.bitacora.data.TaskInput
 import app.bitacora.data.priorityLabel
@@ -45,11 +46,11 @@ import java.time.ZoneOffset
 /** Alta (`task == null`) o edición de una tarea del proyecto abierto. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskDialog(vm: AppViewModel, task: Task?, onClose: () -> Unit) {
+fun TaskDialog(vm: AppViewModel, task: Task?, phases: List<Phase>, projectId: Int, onClose: () -> Unit) {
     var title by remember { mutableStateOf(task?.title ?: "") }
     var description by remember { mutableStateOf(task?.description ?: "") }
     var priority by remember { mutableStateOf(task?.priority ?: "normal") }
-    var phaseId by remember { mutableStateOf(task?.phaseId ?: vm.phases.first().id) }
+    var phaseId by remember { mutableStateOf(task?.phaseId ?: phases.first().id) }
     var assigneeId by remember { mutableStateOf(task?.assigneeId) }
     var dueDate by remember { mutableStateOf(task?.dueDate ?: "") }
     val checklist = remember { mutableStateListOf<ChecklistItem>().apply { addAll(task?.checklist ?: emptyList()) } }
@@ -64,7 +65,7 @@ fun TaskDialog(vm: AppViewModel, task: Task?, onClose: () -> Unit) {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(title, { title = it }, Modifier.fillMaxWidth(), label = { Text("Título") })
                 OutlinedTextField(description, { description = it }, Modifier.fillMaxWidth(), label = { Text("Descripción") }, minLines = 2)
-                Choice("Fase", vm.phases.firstOrNull { it.id == phaseId }?.name ?: "", vm.phases.map { it.name }) { phaseId = vm.phases[it].id }
+                Choice("Fase", phases.firstOrNull { it.id == phaseId }?.name ?: "", phases.map { it.name }) { phaseId = phases[it].id }
                 Choice("Prioridad", priorityLabel(priority), PRIORITIES.map { it.second }) { priority = PRIORITIES[it].first }
                 Choice("Responsable", vm.users.firstOrNull { it.id == assigneeId }?.name ?: "Sin asignar", listOf("Sin asignar") + vm.users.map { it.name }) {
                     assigneeId = if (it == 0) null else vm.users[it - 1].id
@@ -96,7 +97,7 @@ fun TaskDialog(vm: AppViewModel, task: Task?, onClose: () -> Unit) {
                 onClick = {
                     // Un elemento escrito y no añadido todavía también se guarda.
                     val items = checklist.toList() + listOfNotNull(newItem.trim().takeIf { it.isNotEmpty() }?.let { ChecklistItem(it, false) })
-                    vm.saveTask(task?.id, TaskInput(title.trim(), description, priority, phaseId, assigneeId, dueDate, items), onClose)
+                    vm.saveTask(projectId, task?.id, TaskInput(title.trim(), description, priority, phaseId, assigneeId, dueDate, items), onClose)
                 },
             ) { Text("Guardar") }
         },

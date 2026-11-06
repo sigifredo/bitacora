@@ -3,6 +3,20 @@
 Todos los cambios relevantes del proyecto se documentan aquí.
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); la versión vigente está en `backend/VERSION`.
 
+## [0.9.0] - 2026-11-05
+
+### Añadido
+
+- **App de Android** (`android/`, Kotlin + Jetpack Compose, Android 16 o superior) como cliente nativo de la misma API, sin cambios en el backend. Incluye inicio y cierre de sesión (la sesión se conserva y el servidor se recuerda), «Pendientes» con todas las tareas sin cerrar y filtros por texto y proyecto, árbol de proyectos con progreso, tablero por fases con «Mover a» en cada tarea, tabla de tareas con opción de incluir subproyectos, y alta, edición y borrado de tareas con checklist, responsable y fecha. El ícono es el logo del frontend y la versión se muestra al pie.
+
+### Cambiado
+
+- La versión es la misma para backend, frontend y Android: se define solo en `backend/VERSION` y `android/app/build.gradle.kts` la lee de ahí (el `versionCode` se deriva como `mayor*10000 + menor*100 + parche`).
+
+### Notas de actualización
+
+- Sin cambios de esquema ni de API. El APK de release se firma con `android/keystore.properties` (fuera de git); sin ese archivo el release sale sin firmar.
+
 ## [0.8.0] - 2026-10-28
 
 ### Cambiado

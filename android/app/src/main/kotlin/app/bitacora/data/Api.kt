@@ -119,6 +119,8 @@ class Api(context: Context) {
     suspend fun tasks(projectId: Int, includeChildren: Boolean = false) =
         list("/api/projects/$projectId/tasks" + if (includeChildren) "?include_children=1" else "").map(Task::from)
 
+    suspend fun pendingTasks() = list("/api/tasks/pending").map(Task::from)
+
     suspend fun saveTask(projectId: Int, taskId: Int?, t: TaskInput): Task {
         val body = JSONObject()
             .put("title", t.title)

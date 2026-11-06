@@ -6,6 +6,10 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// La versión se define solo en backend/VERSION (la misma que usan el backend y el frontend).
+val appVersion = rootProject.file("../backend/VERSION").readText().trim()
+val (vMajor, vMinor, vPatch) = appVersion.split(".").map { it.toInt() }
+
 android {
     namespace = "app.bitacora"
     compileSdk = 36
@@ -14,8 +18,8 @@ android {
         applicationId = "app.bitacora"
         minSdk = 36
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = vMajor * 10000 + vMinor * 100 + vPatch
+        versionName = appVersion
     }
 
     // Firma de release: credenciales en keystore.properties (fuera de git). Sin ese archivo el release queda sin firmar.
@@ -46,6 +50,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

@@ -63,7 +63,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.text.style.TextAlign
 import app.bitacora.AppViewModel
+import app.bitacora.BuildConfig
+import java.time.LocalDate
 import app.bitacora.data.Phase
 import app.bitacora.data.Project
 import app.bitacora.data.Task
@@ -114,14 +125,110 @@ fun LoginScreen(vm: AppViewModel) {
             Modifier.fillMaxWidth().padding(top = 16.dp),
             enabled = !vm.loading && server.isNotBlank() && username.isNotBlank() && password.isNotEmpty(),
         ) { Text(if (vm.loading) "Entrando…" else "Entrar") }
+        Spacer(Modifier.height(24.dp))
+        VersionLabel()
     }
     ErrorDialog(vm)
 }
 
-/** Proyectos como árbol plano con sangría; los subproyectos de uno colapsado se ocultan. */
+@Composable
+fun VersionLabel(modifier: Modifier = Modifier) {
+    Text(
+        "v${BuildConfig.VERSION_NAME}", modifier.fillMaxWidth().padding(vertical = 4.dp),
+        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+    )
+}
+
+/** Inicio: «Pendientes» (todas las tareas sin cerrar) y «Proyectos», con la versión de la app al pie. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectsScreen(vm: AppViewModel) {
+    var section by rememberSaveable { mutableIntStateOf(0) }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(if (section == 0) "Tareas pendientes" else "Proyectos") },
+                actions = {
+                    IconButton({ vm.refreshHome() }) { Icon(Icons.Default.Refresh, "Actualizar") }
+                    IconButton({ vm.logout() }) { Icon(Icons.AutoMirrored.Filled.Logout, "Cerrar sesión") }
+                },
+            )
+        },
+        bottomBar = {
+            Column {
+                NavigationBar(windowInsets = WindowInsets(0)) {
+                    NavigationBarItem(section == 0, { section = 0 }, { Icon(Icons.Default.Checklist, null) }, label = { Text("Pendientes") })
+                    NavigationBarItem(section == 1, { section = 1 }, { Icon(Icons.Default.Folder, null) }, label = { Text("Proyectos") })
+                }
+                VersionLabel(Modifier.background(MaterialTheme.colorScheme.surfaceContainer).navigationBarsPadding())
+            }
+        },
+    ) { pad ->
+        Box(Modifier.padding(pad).fillMaxSize()) {
+            if (section == 0) PendingList(vm) else ProjectTree(vm)
+        }
+    }
+    vm.pendingEdit?.let { (task, phases) -> TaskDialog(vm, task, phases, task.projectId) { vm.pendingEdit = null } }
+    ErrorDialog(vm)
+}
+
+/** Equivale a la tabla de la página principal de la web: filtros por texto y proyecto, urgentes primero. */
+@Composable
+private fun PendingList(vm: AppViewModel) {
+    var search by rememberSaveable { mutableStateOf("") }
+    var projectId by rememberSaveable { mutableStateOf<Int?>(null) }
+    var menu by remember { mutableStateOf(false) }
+    val today = remember { LocalDate.now().toString() }
+    val projectNames = remember(vm.pending) { vm.pending.associate { it.projectId to it.projectName } }
+    val rows = vm.pending.filter {
+        (projectId == null || it.projectId == projectId) && (search.isBlank() || it.title.contains(search.trim(), ignoreCase = true))
+    }
+    Column(Modifier.fillMaxSize()) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(search, { search = it }, Modifier.weight(1f), singleLine = true, placeholder = { Text("Buscar tarea…") })
+            Box(Modifier.padding(start = 8.dp)) {
+                OutlinedButton({ menu = true }) { Text(projectNames[projectId] ?: "Todos", maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 100.dp)) }
+                DropdownMenu(menu, { menu = false }) {
+                    DropdownMenuItem(text = { Text("Todos los proyectos") }, onClick = { menu = false; projectId = null })
+                    projectNames.entries.sortedBy { it.value.lowercase() }.forEach { (id, name) ->
+                        DropdownMenuItem(text = { Text(name) }, onClick = { menu = false; projectId = id })
+                    }
+                }
+            }
+        }
+        Text("${rows.size} tareas", Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.bodySmall)
+        HorizontalDivider(Modifier.padding(top = 8.dp))
+        if (rows.isEmpty()) {
+            Box(Modifier.fillMaxSize(), Alignment.Center) { Text(if (vm.loading) "Cargando…" else "No hay tareas pendientes") }
+        } else {
+            LazyColumn(Modifier.fillMaxSize()) {
+                items(rows, key = { it.id }) { t ->
+                    Column(Modifier.fillMaxWidth().clickable { vm.editPending(t) }.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                        Text(t.title, style = MaterialTheme.typography.titleSmall)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(8.dp).background(parseColor(t.phaseColor), CircleShape))
+                            Text(" ${t.projectName} · ${t.phaseName} · ${priorityLabel(t.priority)}", style = MaterialTheme.typography.bodySmall)
+                        }
+                        val meta = listOfNotNull(t.assigneeName, t.dueDate?.let { "vence $it" })
+                        if (meta.isNotEmpty()) {
+                            val overdue = t.dueDate != null && t.dueDate < today
+                            Text(
+                                meta.joinToString(" · "), style = MaterialTheme.typography.bodySmall,
+                                color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    HorizontalDivider()
+                }
+            }
+        }
+    }
+}
+
+/** Proyectos como árbol plano con sangría; los subproyectos de uno colapsado se ocultan. */
+@Composable
+private fun ProjectTree(vm: AppViewModel) {
     var collapsed by rememberSaveable { mutableStateOf(setOf<Int>()) }
     val children = remember(vm.projects) { vm.projects.groupBy { it.parentId }.mapValues { e -> e.value.sortedBy { it.position } } }
     val rows = buildList<Pair<Project, Int>> {
@@ -133,46 +240,33 @@ fun ProjectsScreen(vm: AppViewModel) {
         }
         walk(null, 0)
     }
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Proyectos") },
-                actions = {
-                    IconButton({ vm.refreshProjects() }) { Icon(Icons.Default.Refresh, "Actualizar") }
-                    IconButton({ vm.logout() }) { Icon(Icons.AutoMirrored.Filled.Logout, "Cerrar sesión") }
-                },
-            )
-        },
-    ) { pad ->
-        if (rows.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(pad), Alignment.Center) { Text(if (vm.loading) "Cargando…" else "No hay proyectos") }
-        } else {
-            LazyColumn(Modifier.padding(pad)) {
-                items(rows, key = { it.first.id }) { (p, depth) ->
-                    val hasChildren = children.containsKey(p.id)
-                    Row(
-                        Modifier.fillMaxWidth().clickable { vm.openProject(p.id) }.padding(start = (16 + depth * 20).dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(p.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                            Text("${p.totalDone}/${p.totalTasks} tareas", style = MaterialTheme.typography.bodySmall)
-                            if (p.totalTasks > 0) {
-                                LinearProgressIndicator(progress = { p.totalDone.toFloat() / p.totalTasks }, Modifier.fillMaxWidth().padding(top = 4.dp))
-                            }
-                        }
-                        if (hasChildren) {
-                            TextButton({ collapsed = if (p.id in collapsed) collapsed - p.id else collapsed + p.id }) {
-                                Text(if (p.id in collapsed) "▸" else "▾")
-                            }
-                        }
+    if (rows.isEmpty()) {
+        Box(Modifier.fillMaxSize(), Alignment.Center) { Text(if (vm.loading) "Cargando…" else "No hay proyectos") }
+        return
+    }
+    LazyColumn(Modifier.fillMaxSize()) {
+        items(rows, key = { it.first.id }) { (p, depth) ->
+            val hasChildren = children.containsKey(p.id)
+            Row(
+                Modifier.fillMaxWidth().clickable { vm.openProject(p.id) }.padding(start = (16 + depth * 20).dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(p.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text("${p.totalDone}/${p.totalTasks} tareas", style = MaterialTheme.typography.bodySmall)
+                    if (p.totalTasks > 0) {
+                        LinearProgressIndicator(progress = { p.totalDone.toFloat() / p.totalTasks }, Modifier.fillMaxWidth().padding(top = 4.dp))
                     }
-                    HorizontalDivider()
+                }
+                if (hasChildren) {
+                    TextButton({ collapsed = if (p.id in collapsed) collapsed - p.id else collapsed + p.id }) {
+                        Text(if (p.id in collapsed) "▸" else "▾")
+                    }
                 }
             }
+            HorizontalDivider()
         }
     }
-    ErrorDialog(vm)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -206,7 +300,7 @@ fun ProjectScreen(vm: AppViewModel) {
         }
     }
     editing?.let { id ->
-        TaskDialog(vm, vm.tasks.firstOrNull { it.id == id }) { editing = null }
+        TaskDialog(vm, vm.tasks.firstOrNull { it.id == id }, vm.phases, project?.id ?: 0) { editing = null }
     }
     ErrorDialog(vm)
 }
