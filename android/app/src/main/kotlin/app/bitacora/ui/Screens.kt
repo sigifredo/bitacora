@@ -149,7 +149,7 @@ private fun AboutDialog(vm: AppViewModel, onDismiss: () -> Unit) {
         title = { Text("Acerca de Bitácora") },
         text = {
             Column {
-                Text("App de Android: v${BuildConfig.VERSION_NAME}")
+                Text("Versión: v${BuildConfig.VERSION_NAME}")
                 Text("Backend: " + (backend?.let { "v$it" } ?: if (failed) "no disponible" else "consultando…"))
             }
         },
@@ -173,7 +173,7 @@ fun ProjectsScreen(vm: AppViewModel) {
                     Box {
                         IconButton({ menu = true }) { Icon(Icons.Default.MoreVert, "Más opciones") }
                         DropdownMenu(menu, { menu = false }) {
-                            DropdownMenuItem(text = { Text("Acerca de") }, onClick = { menu = false; about = true })
+                            DropdownMenuItem(text = { Text("Acerca de...") }, onClick = { menu = false; about = true })
                         }
                     }
                 },
