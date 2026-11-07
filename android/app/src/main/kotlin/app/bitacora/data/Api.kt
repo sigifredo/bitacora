@@ -112,6 +112,7 @@ class Api(context: Context) {
         clearSession()
     }
 
+    suspend fun version() = obj("GET", "/api/version").getString("version")
     suspend fun me() = User.from(obj("GET", "/api/auth/me"))
     suspend fun users() = list("/api/users").map(User::from)
     suspend fun projects() = list("/api/projects").map(Project::from)

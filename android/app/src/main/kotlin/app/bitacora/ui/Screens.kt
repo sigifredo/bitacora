@@ -74,6 +74,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.text.style.TextAlign
 import app.bitacora.AppViewModel
 import app.bitacora.BuildConfig
+import app.bitacora.data.ApiException
+import androidx.compose.runtime.LaunchedEffect
 import java.time.LocalDate
 import app.bitacora.data.Phase
 import app.bitacora.data.Project
@@ -125,26 +127,42 @@ fun LoginScreen(vm: AppViewModel) {
             Modifier.fillMaxWidth().padding(top = 16.dp),
             enabled = !vm.loading && server.isNotBlank() && username.isNotBlank() && password.isNotEmpty(),
         ) { Text(if (vm.loading) "Entrando…" else "Entrar") }
-        Spacer(Modifier.height(24.dp))
-        VersionLabel()
     }
     ErrorDialog(vm)
 }
 
+/** Muestra la versión de la app y la del backend (consultada al abrir el diálogo). */
 @Composable
-fun VersionLabel(modifier: Modifier = Modifier) {
-    Text(
-        "v${BuildConfig.VERSION_NAME}", modifier.fillMaxWidth().padding(vertical = 4.dp),
-        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center,
+private fun AboutDialog(vm: AppViewModel, onDismiss: () -> Unit) {
+    var backend by remember { mutableStateOf<String?>(null) }
+    var failed by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        try {
+            backend = vm.api.version()
+        } catch (_: ApiException) {
+            failed = true
+        }
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onDismiss) { Text("Cerrar") } },
+        title = { Text("Acerca de Bitácora") },
+        text = {
+            Column {
+                Text("App de Android: v${BuildConfig.VERSION_NAME}")
+                Text("Backend: " + (backend?.let { "v$it" } ?: if (failed) "no disponible" else "consultando…"))
+            }
+        },
     )
 }
 
-/** Inicio: «Pendientes» (todas las tareas sin cerrar) y «Proyectos», con la versión de la app al pie. */
+/** Inicio: «Pendientes» (todas las tareas sin cerrar) y «Proyectos», con «Acerca de» en el menú. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectsScreen(vm: AppViewModel) {
     var section by rememberSaveable { mutableIntStateOf(0) }
+    var menu by remember { mutableStateOf(false) }
+    var about by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -152,16 +170,19 @@ fun ProjectsScreen(vm: AppViewModel) {
                 actions = {
                     IconButton({ vm.refreshHome() }) { Icon(Icons.Default.Refresh, "Actualizar") }
                     IconButton({ vm.logout() }) { Icon(Icons.AutoMirrored.Filled.Logout, "Cerrar sesión") }
+                    Box {
+                        IconButton({ menu = true }) { Icon(Icons.Default.MoreVert, "Más opciones") }
+                        DropdownMenu(menu, { menu = false }) {
+                            DropdownMenuItem(text = { Text("Acerca de") }, onClick = { menu = false; about = true })
+                        }
+                    }
                 },
             )
         },
         bottomBar = {
-            Column {
-                NavigationBar(windowInsets = WindowInsets(0)) {
-                    NavigationBarItem(section == 0, { section = 0 }, { Icon(Icons.Default.Checklist, null) }, label = { Text("Pendientes") })
-                    NavigationBarItem(section == 1, { section = 1 }, { Icon(Icons.Default.Folder, null) }, label = { Text("Proyectos") })
-                }
-                VersionLabel(Modifier.background(MaterialTheme.colorScheme.surfaceContainer).navigationBarsPadding())
+            NavigationBar {
+                NavigationBarItem(section == 0, { section = 0 }, { Icon(Icons.Default.Checklist, null) }, label = { Text("Pendientes") })
+                NavigationBarItem(section == 1, { section = 1 }, { Icon(Icons.Default.Folder, null) }, label = { Text("Proyectos") })
             }
         },
     ) { pad ->
@@ -170,6 +191,7 @@ fun ProjectsScreen(vm: AppViewModel) {
         }
     }
     vm.pendingEdit?.let { (task, phases) -> TaskDialog(vm, task, phases, task.projectId) { vm.pendingEdit = null } }
+    if (about) AboutDialog(vm) { about = false }
     ErrorDialog(vm)
 }
 

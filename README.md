@@ -2,7 +2,7 @@
 
 Gestor de proyectos personales: proyectos con subproyectos ilimitados, tareas con lista de verificación, fases de kanban configurables por proyecto, vistas de tablero y tabla, y usuarios con roles. La interfaz es adaptable a pantallas estrechas y está en español.
 
-PHP 8.3 (API REST sin dependencias, sin Composer; no usar sintaxis exclusiva de 8.4) + Vue 3 (Vite, pnpm) + MariaDB. Versión vigente: ver `backend/VERSION`.
+PHP 8.3 (API REST sin dependencias, sin Composer; no usar sintaxis exclusiva de 8.4) + Vue 3 (Vite, pnpm) + MariaDB. Versión vigente: ver `backend/VERSION` (la app de Android tiene la suya en `android/VERSION`).
 
 ## Puesta en marcha
 
@@ -60,4 +60,4 @@ Usan una base de datos aparte (`BITACORA_TEST_DB`, por defecto `project_admin`) 
 ## Más documentación
 
 - [`docs/despliegue-cpanel.md`](docs/despliegue-cpanel.md): instalación en un hosting con cPanel y generación de los zips de despliegue.
-- [`CHANGELOG.md`](CHANGELOG.md): historial de versiones (la vigente está en `backend/VERSION`).
+- [`CHANGELOG.md`](CHANGELOG.md): historial de versiones (la vigente está en `backend/VERSION`).  El de la app de Android está en [`android/CHANGELOG.md`](android/CHANGELOG.md).

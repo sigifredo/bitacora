@@ -6,8 +6,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-// La versión se define solo en backend/VERSION (la misma que usan el backend y el frontend).
-val appVersion = rootProject.file("../backend/VERSION").readText().trim()
+// La versión de la app se define solo en android/VERSION (es independiente de la del backend y el frontend).
+val appVersion = rootProject.file("VERSION").readText().trim()
 val (vMajor, vMinor, vPatch) = appVersion.split(".").map { it.toInt() }
 
 android {

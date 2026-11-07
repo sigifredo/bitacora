@@ -1,5 +1,7 @@
 # Bitácora para Android
 
+Versión propia en `android/VERSION` y registro de cambios en `CHANGELOG.md` (independientes del backend y el frontend).
+
 Cliente nativo (Kotlin + Jetpack Compose) de la API de Bitácora. No necesita cambios en el backend: usa la misma sesión por cookie y la cabecera `X-Requested-With: fetch` que el frontend web.
 
 ## Compilar
