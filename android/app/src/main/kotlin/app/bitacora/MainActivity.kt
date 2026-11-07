@@ -43,7 +43,7 @@ private fun Root(vm: AppViewModel) {
             TaskScreen(vm, vm.editor!!)
         }
         vm.currentProjectId != null -> {
-            BackHandler { vm.openProject(null) }
+            BackHandler { vm.back() }
             ProjectScreen(vm)
         }
         else -> ProjectsScreen(vm)

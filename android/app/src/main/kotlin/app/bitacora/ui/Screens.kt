@@ -168,13 +168,12 @@ private fun AboutDialog(vm: AppViewModel, onDismiss: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectsScreen(vm: AppViewModel) {
-    var section by rememberSaveable { mutableIntStateOf(0) }
     var menu by remember { mutableStateOf(false) }
     var about by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (section == 0) "Tareas pendientes" else "Proyectos") },
+                title = { Text(if (vm.homeSection == 0) "Tareas pendientes" else "Proyectos") },
                 actions = {
                     IconButton({ vm.refreshHome() }) { Icon(Icons.Default.Refresh, "Actualizar") }
                     IconButton({ vm.logout() }) { Icon(Icons.AutoMirrored.Filled.Logout, "Cerrar sesión") }
@@ -189,13 +188,13 @@ fun ProjectsScreen(vm: AppViewModel) {
         },
         bottomBar = {
             NavigationBar {
-                NavigationBarItem(section == 0, { section = 0 }, { Icon(Icons.Default.Checklist, null) }, label = { Text("Pendientes") })
-                NavigationBarItem(section == 1, { section = 1 }, { Icon(Icons.Default.Folder, null) }, label = { Text("Proyectos") })
+                NavigationBarItem(vm.homeSection == 0, { vm.homeSection = 0 }, { Icon(Icons.Default.Checklist, null) }, label = { Text("Pendientes") })
+                NavigationBarItem(vm.homeSection == 1, { vm.homeSection = 1 }, { Icon(Icons.Default.Folder, null) }, label = { Text("Proyectos") })
             }
         },
     ) { pad ->
         Box(Modifier.padding(pad).fillMaxSize()) {
-            if (section == 0) PendingList(vm) else ProjectTree(vm)
+            if (vm.homeSection == 0) PendingList(vm) else ProjectTree(vm)
         }
     }
     if (about) AboutDialog(vm) { about = false }
@@ -205,8 +204,8 @@ fun ProjectsScreen(vm: AppViewModel) {
 /** Equivale a la tabla de la página principal de la web: filtros por texto y proyecto, urgentes primero. */
 @Composable
 private fun PendingList(vm: AppViewModel) {
-    var search by rememberSaveable { mutableStateOf("") }
-    var projectId by rememberSaveable { mutableStateOf<Int?>(null) }
+    var search by vm::pendingSearch
+    var projectId by vm::pendingProjectFilter
     var menu by remember { mutableStateOf(false) }
     val today = remember { LocalDate.now().toString() }
     val projectNames = remember(vm.pending) { vm.pending.associate { it.projectId to it.projectName } }
@@ -258,7 +257,7 @@ private fun PendingList(vm: AppViewModel) {
 /** Proyectos como árbol plano con sangría; los subproyectos de uno colapsado se ocultan. */
 @Composable
 private fun ProjectTree(vm: AppViewModel) {
-    var collapsed by rememberSaveable { mutableStateOf(setOf<Int>()) }
+    var collapsed by vm::collapsedProjects
     val children = remember(vm.projects) { vm.projects.groupBy { it.parentId }.mapValues { e -> e.value.sortedBy { it.position } } }
     val rows = buildList<Pair<Project, Int>> {
         fun walk(parent: Int?, depth: Int) {
@@ -308,12 +307,11 @@ private fun ProjectTree(vm: AppViewModel) {
 @Composable
 fun ProjectScreen(vm: AppViewModel) {
     val project = vm.projects.firstOrNull { it.id == vm.currentProjectId }
-    var tab by rememberSaveable { mutableIntStateOf(0) }
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(project?.name ?: "", maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                navigationIcon = { IconButton({ vm.openProject(null) }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } },
+                navigationIcon = { IconButton({ vm.back() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } },
                 actions = { IconButton({ vm.reload() }) { Icon(Icons.Default.Refresh, "Actualizar") } },
             )
         },
@@ -322,14 +320,14 @@ fun ProjectScreen(vm: AppViewModel) {
         },
     ) { pad ->
         Column(Modifier.padding(pad).fillMaxSize()) {
-            TabRow(selectedTabIndex = tab) {
-                Tab(tab == 0, { tab = 0 }, text = { Text("Tablero") })
-                Tab(tab == 1, { tab = 1 }, text = { Text("Tabla") })
+            TabRow(selectedTabIndex = vm.projectTab) {
+                Tab(vm.projectTab == 0, { vm.projectTab = 0 }, text = { Text("Tablero") })
+                Tab(vm.projectTab == 1, { vm.projectTab = 1 }, text = { Text("Tabla") })
             }
             if (vm.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
             // Las tareas de un subproyecto se editan en el propio subproyecto: cada uno tiene sus fases.
             val open = { t: Task -> if (t.projectId == vm.currentProjectId) vm.openEditor(t) else vm.openProject(t.projectId) }
-            if (tab == 0) BoardView(vm, open) else TableView(vm, open)
+            if (vm.projectTab == 0) BoardView(vm, open) else TableView(vm, open)
         }
     }
     ErrorDialog(vm)
@@ -408,7 +406,7 @@ private fun TaskCard(vm: AppViewModel, task: Task, phases: List<Phase>, onOpen: 
 @Composable
 private fun TableView(vm: AppViewModel, onOpen: (Task) -> Unit) {
     val hasChildren = vm.projects.any { it.parentId == vm.currentProjectId }
-    var onlyOpen by rememberSaveable { mutableStateOf(false) }
+    var onlyOpen by vm::onlyOpenTasks
     val rows = vm.tasks
         .filter { !onlyOpen || !it.isClosed }
         .sortedWith(compareBy({ it.isClosed }, { priorityRank(it.priority) }, { it.dueDate ?: "9999" }))

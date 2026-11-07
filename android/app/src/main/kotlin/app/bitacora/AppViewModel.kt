@@ -42,6 +42,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** Pantalla de tarea abierta (alta o edición), con las fases de su proyecto (cada proyecto tiene las suyas). */
     var editor by mutableStateOf<TaskEditor?>(null)
 
+    /** Pestaña del inicio (0 = Pendientes, 1 = Proyectos) y de un proyecto (0 = Tablero, 1 = Tabla); viven aquí para sobrevivir al cambio de pantalla. */
+    var homeSection by mutableStateOf(0)
+    var projectTab by mutableStateOf(0)
+    var pendingSearch by mutableStateOf("")
+    var pendingProjectFilter by mutableStateOf<Int?>(null)
+    var collapsedProjects by mutableStateOf(setOf<Int>())
+    var onlyOpenTasks by mutableStateOf(false)
+    private val projectStack = mutableListOf<Int>()
+
     // Descarta respuestas de una carga anterior si el usuario ya abrió otro proyecto.
     private var loadSeq = 0
 
@@ -65,6 +74,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun resetSession() {
         user = null
         currentProjectId = null
+        projectStack.clear()
+        homeSection = 0
+        projectTab = 0
+        pendingSearch = ""
+        pendingProjectFilter = null
+        collapsedProjects = emptySet()
+        onlyOpenTasks = false
         projects = emptyList()
         phases = emptyList()
         tasks = emptyList()
@@ -133,7 +149,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         editor = null
     }
 
-    fun openProject(id: Int?) {
+    /** Entra a un proyecto recordando el actual, para que «atrás» vuelva a él y no al inicio. */
+    fun openProject(id: Int) {
+        currentProjectId?.let { projectStack.add(it) }
+        show(id)
+    }
+
+    /** Vuelve al proyecto anterior o, si no hay, al inicio. */
+    fun back() {
+        show(projectStack.removeLastOrNull())
+    }
+
+    private fun show(id: Int?) {
+        if (id == null) projectStack.clear()
         currentProjectId = id
         includeChildren = false
         phases = emptyList()
