@@ -51,7 +51,7 @@ fun TaskDialog(vm: AppViewModel, task: Task?, phases: List<Phase>, projectId: In
     var description by remember { mutableStateOf(task?.description ?: "") }
     var priority by remember { mutableStateOf(task?.priority ?: "normal") }
     var phaseId by remember { mutableStateOf(task?.phaseId ?: phases.first().id) }
-    var assigneeId by remember { mutableStateOf(task?.assigneeId) }
+    var assigneeId by remember { mutableStateOf(if (task == null) vm.user?.id else task.assigneeId) }
     var dueDate by remember { mutableStateOf(task?.dueDate ?: "") }
     val checklist = remember { mutableStateListOf<ChecklistItem>().apply { addAll(task?.checklist ?: emptyList()) } }
     var newItem by remember { mutableStateOf("") }
