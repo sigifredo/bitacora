@@ -1,5 +1,5 @@
-import '@fontsource-variable/inter/wght.css';
-import '@fontsource/kalam/latin-700.css';
+import '@fontsource-variable/instrument-sans';
+import '@fontsource-variable/geist-mono';
 import './styles/main.scss';
 import { createApp, watch } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';

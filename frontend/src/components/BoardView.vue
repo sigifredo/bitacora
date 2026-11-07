@@ -2,7 +2,7 @@
     <div class="board">
         <section v-for="f in phases" :key="f.id" class="column" :class="{ 'drop-target': dragging && over.phaseId === f.id }" @dragover.prevent="onDragOverColumn(f.id)" @drop.prevent="drop(f.id)">
             <header :style="{ borderTopColor: f.color }">
-                <strong>{{ f.name }}</strong>
+                <strong>{{ f.name }}<span v-if="f.is_closed" class="closed-mark" title="Fase cerrada" aria-label="Fase cerrada"> ✓</span></strong>
                 <span class="count">{{ inPhase(f.id).length }}</span>
                 <button class="icon" :aria-label="`Añadir tarea a ${f.name}`" :title="`Añadir tarea a ${f.name}`" @click="emit('add', f.id)">+</button>
             </header>
@@ -103,7 +103,7 @@ function drop(phaseId) {
 .column {
     flex: 0 0 $column-width;
     background: color-mix(in srgb, var(--line) 45%, var(--bg));
-    border-radius: 8px;
+    border-radius: var(--radius-panel);
     padding-bottom: 8px;
     min-height: 120px;
 
@@ -118,13 +118,14 @@ function drop(phaseId) {
         gap: 8px;
         padding: 9px 10px;
         border-top: 3px solid;
-        border-radius: 8px 8px 0 0;
+        border-radius: var(--radius-panel) var(--radius-panel) 0 0;
 
         strong {
             flex: 1;
         }
         .count {
             color: var(--muted);
+            font-variant-numeric: tabular-nums;
         }
     }
 
@@ -139,11 +140,31 @@ function drop(phaseId) {
 
 .card {
     @include panel;
-    padding: 8px 10px;
+    position: relative;
+    overflow: hidden;
+    padding: 10px 12px;
     cursor: grab;
+    transition: border-color var(--t-fast) var(--ease);
 
     &:hover {
+        border-color: var(--line-strong);
+    }
+
+    // La solapa del logotipo marca la tarjeta con el foco del teclado.
+    &:focus-within {
         border-color: var(--accent);
+
+        &::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 18px;
+            height: 18px;
+            background: var(--signal);
+            border-bottom-left-radius: var(--radius-card);
+            pointer-events: none;
+        }
     }
     &.ghost {
         opacity: 0.35;
@@ -162,7 +183,7 @@ function drop(phaseId) {
         justify-content: space-between;
         margin-top: 6px;
         opacity: 0;
-        transition: opacity 0.12s;
+        transition: opacity var(--t-fast) var(--ease);
 
         button {
             padding: 0 10px;
@@ -184,8 +205,9 @@ function drop(phaseId) {
 }
 
 .avatar {
-    background: var(--accent);
-    color: #fff;
+    background: var(--text);
+    color: var(--bg);
+    font-weight: 600;
     border-radius: 50%;
     width: 22px;
     height: 22px;

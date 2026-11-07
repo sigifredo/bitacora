@@ -3,6 +3,20 @@
 Cambios relevantes del backend y el frontend (comparten versión). La app de Android tiene su propio registro en [`android/CHANGELOG.md`](android/CHANGELOG.md).
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); la versión vigente está en `backend/VERSION`.
 
+## [Sin publicar]
+
+### Cambiado
+
+- Rediseño visual: línea «Esquina». Nueva identidad (isotipo de hoja con la esquina doblada, paleta de papel, tinta y burdeos, con modo oscuro automático y de azul grisáceo), tipografías Instrument Sans y Geist Mono en lugar de Inter y Kalam, radios y espaciado en escala, etiquetas de prioridad y estado por contraste y no por tono, solapa en la tarjeta del tablero con el foco del teclado, marca de verificación en las fases cerradas y seis colores sugeridos para las fases (el color por defecto de una fase nueva pasa a Sepia `#8A7E68`). El sistema completo está en [`docs/sistema-de-diseno.md`](docs/sistema-de-diseno.md).
+
+### Añadido
+
+- Componente `BrandMark.vue`, `logo-mono.svg` y `apple-touch-icon.png`; metaetiquetas `theme-color` para claro y oscuro.
+
+### Notas de actualización
+
+- Sin cambios de esquema ni de API. Los proyectos en estado «Activo» ya no muestran etiqueta de estado. Se retiran las dependencias `@fontsource-variable/inter` y `@fontsource/kalam` y se añaden `@fontsource-variable/instrument-sans` y `@fontsource-variable/geist-mono`; hay que ejecutar `pnpm install` y recompilar.
+
 ## [0.8.0] - 2026-10-28
 
 ### Cambiado

@@ -1,15 +1,15 @@
 <template>
     <div class="login">
         <form @submit.prevent="submit">
-            <img class="logo" :src="logo" alt="" />
-            <h1>bitácora</h1>
+            <BrandMark :size="64" title="Bitácora" class="logo" />
+            <h1>Bitácora</h1>
             <label>Usuario<input v-model="form.username" required autofocus autocomplete="username" /></label>
             <label>Contraseña<input type="password" v-model="form.password" required autocomplete="current-password" /></label>
             <p v-if="error" class="error">{{ error }}</p>
             <button class="primary" :disabled="busy">Entrar</button>
         </form>
         <footer>
-            <p>made with love by <a href="https://github.com/sigifredo/" target="_blank" rel="noopener noreferrer">@sigifredo</a></p>
+            <p>made with love by <a href="https://sigifredo.dev/" target="_blank" rel="noopener noreferrer">@sigifredo</a></p>
             <p>versión {{ version }}</p>
         </footer>
     </div>
@@ -19,9 +19,9 @@
 import { reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { auth } from '../store.js';
+import BrandMark from '../components/BrandMark.vue';
 
 const version = __APP_VERSION__;
-const logo = `${import.meta.env.BASE_URL}logo.svg`;
 const route = useRoute();
 const router = useRouter();
 const form = reactive({ username: '', password: '' });
@@ -51,19 +51,18 @@ async function submit() {
     width: min(360px, 92vw);
 
     form {
-        @include panel(10px);
-        padding: 24px;
+        @include panel(var(--radius-modal));
+        padding: 28px;
     }
     .logo {
-        display: block;
-        width: 64px;
-        height: 64px;
-        margin: 0 auto 8px;
+        margin: 0 auto 12px;
     }
     h1 {
-        font-family: 'Kalam', cursive;
-        font-weight: 700;
+        font-size: 24px;
+        line-height: 28px;
+        letter-spacing: -0.02em;
         text-align: center;
+        margin-bottom: 16px;
     }
     button {
         width: 100%;
@@ -74,6 +73,11 @@ async function submit() {
         text-align: center;
         font-size: 12px;
         color: var(--muted);
+
+        p:last-child {
+            font-family: var(--font-mono);
+            font-size: 11px;
+        }
 
         p {
             margin: 2px 0;

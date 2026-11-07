@@ -48,8 +48,8 @@
     <p v-if="!roots.length" class="muted">Aún no hay proyectos. Crea el primero con «+» en la barra lateral.</p>
     <div class="cards-grid">
         <router-link v-for="p in roots" :key="p.id" :to="`/projects/${p.id}`" class="project-card">
-            <strong>{{ p.name }}</strong>
-            <span class="badge">{{ STATUS[p.status] }}</span>
+            <h3>{{ p.name }}</h3>
+            <span v-if="p.status !== 'active'" class="badge" :class="`st-${p.status}`">{{ STATUS[p.status] }}</span>
             <p class="muted">{{ p.description || 'Sin descripción' }}</p>
             <div class="progress"><div :style="{ width: pct(p) + '%' }" /></div>
             <small class="muted">{{ p.total_done_count }}/{{ p.total_task_count }} tareas · {{ store.children(p.id).length }} subproyectos</small>
@@ -149,7 +149,8 @@ const pct = p => (p.total_task_count ? Math.round((p.total_done_count / p.total_
 }
 
 .project-card {
-    @include panel(8px);
+    @include panel;
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -157,7 +158,12 @@ const pct = p => (p.total_task_count ? Math.round((p.total_done_count / p.total_
     color: var(--text);
 
     &:hover {
-        border-color: var(--accent);
+        border-color: var(--line-strong);
+        text-decoration: none;
+    }
+
+    h3 {
+        margin: 0;
     }
 
     p {
@@ -177,6 +183,7 @@ const pct = p => (p.total_task_count ? Math.round((p.total_done_count / p.total_
         div {
             height: 100%;
             background: var(--accent);
+            border-radius: 3px;
         }
     }
 }

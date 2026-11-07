@@ -9,22 +9,51 @@ textarea {
 }
 
 button {
+    font-weight: 500;
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: $radius;
-    padding: 5px 11px;
+    border-radius: var(--radius-control);
+    padding: 6px 12px;
     cursor: pointer;
+    transition:
+        border-color var(--t-fast) var(--ease),
+        background-color var(--t-fast) var(--ease);
 
     &:hover {
         border-color: var(--accent);
     }
+    &:active {
+        background: var(--line);
+    }
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        border-color: var(--line);
+    }
     &.primary {
         background: var(--accent);
         border-color: var(--accent);
-        color: #fff;
+        color: var(--on-accent);
+
+        &:hover {
+            background: color-mix(in srgb, var(--accent) 88%, var(--text));
+            border-color: transparent;
+        }
+        &:active {
+            background: color-mix(in srgb, var(--accent) 78%, var(--text));
+        }
     }
     &.danger {
         color: var(--danger);
+
+        &:hover {
+            border-color: var(--danger);
+        }
+        &.solid {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: var(--on-danger);
+        }
     }
     &.icon {
         padding: 0 8px;
@@ -36,6 +65,11 @@ button {
         background: none;
         padding: 0;
         color: var(--accent);
+
+        &:hover {
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
     }
 }
 
@@ -49,10 +83,28 @@ input,
 select,
 textarea {
     background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: $radius;
-    padding: 6px 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-control);
+    padding: 7px 10px;
     width: 100%;
+
+    &:hover {
+        border-color: var(--text);
+    }
+    &:focus-visible {
+        border-color: var(--accent);
+    }
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    &::placeholder {
+        color: var(--muted);
+        opacity: 1;
+    }
+    &[aria-invalid='true'] {
+        border-color: var(--danger);
+    }
 }
 input[type='color'] {
     width: 36px;
@@ -60,7 +112,9 @@ input[type='color'] {
     padding: 2px;
     flex: none;
 }
-input[type='checkbox'] {
+input[type='checkbox'],
+input[type='radio'] {
+    accent-color: var(--accent);
     width: auto;
 }
 
@@ -69,6 +123,7 @@ label {
     margin-bottom: 10px;
     color: var(--muted);
     font-size: 12px;
+    font-weight: 500;
 
     input,
     select,
@@ -76,6 +131,7 @@ label {
         margin-top: 3px;
         color: var(--text);
         font-size: 14px;
+        font-weight: 400;
     }
 
     &.inline {
@@ -104,7 +160,8 @@ label {
     button {
         min-height: 36px;
     }
-    input[type='checkbox'] {
+    input[type='checkbox'],
+    input[type='radio'] {
         min-height: 0;
     }
 }

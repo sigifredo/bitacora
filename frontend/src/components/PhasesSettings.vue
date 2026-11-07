@@ -8,6 +8,7 @@
                 <button class="icon" :disabled="i === rows.length - 1" :aria-label="`Bajar fase ${f.name}`" @click="reorder(i, i + 1)">▼</button>
                 <input type="color" v-model="f.color" aria-label="Color de la fase" @change="save(f)" />
                 <input class="name" v-model="f.name" aria-label="Nombre de la fase" @change="f.name.trim() && save(f)" />
+                <span v-if="f.is_closed" class="closed-mark" title="Fase cerrada" aria-hidden="true">✓</span>
                 <label class="inline"><input type="checkbox" v-model="f.is_closed" @change="save(f)" /> Cerrada</label>
                 <span class="muted">{{ taskCount(f.id) }} {{ taskCount(f.id) === 1 ? 'tarea' : 'tareas' }}</span>
                 <button class="danger" :aria-label="`Eliminar fase ${f.name}`" @click="askRemove(f)">Eliminar</button>
@@ -15,6 +16,9 @@
         </ul>
         <form class="phase-new" @submit.prevent="add">
             <input type="color" v-model="draft.color" aria-label="Color de la nueva fase" />
+            <span class="swatches">
+                <button v-for="c in PHASE_COLORS" :key="c.value" type="button" class="icon swatch" :style="{ background: c.value }" :title="c.name" :aria-label="c.name" :aria-pressed="draft.color === c.value" @click="draft.color = c.value" />
+            </span>
             <input class="name" v-model="draft.name" placeholder="Nueva fase…" aria-label="Nombre de la nueva fase" required maxlength="100" />
             <label class="inline"><input type="checkbox" v-model="draft.is_closed" /> Cerrada</label>
             <button class="primary">Añadir</button>
@@ -52,7 +56,18 @@ const props = defineProps({ projectId: Number, phases: Array, tasks: Array });
 const emit = defineEmits(['changed']);
 
 const rows = reactive([]);
-const draft = reactive({ name: '', color: '#64748b', is_closed: false });
+// Colores sugeridos para las fases: todos superan 3:1 contra --panel en claro y oscuro.
+const PHASE_COLORS = [
+    { name: 'Sepia', value: '#8a7e68' },
+    { name: 'Cereza', value: '#c95d6f' },
+    { name: 'Ocre', value: '#a9751b' },
+    { name: 'Musgo', value: '#578d45' },
+    { name: 'Pizarra', value: '#5384a8' },
+    { name: 'Ciruela', value: '#ad68a2' },
+];
+const DEFAULT_COLOR = PHASE_COLORS[0].value;
+
+const draft = reactive({ name: '', color: DEFAULT_COLOR, is_closed: false });
 const dragIndex = ref(null);
 const removing = ref(null); // { id, name, count, options, moveTo }
 const { error, guard } = useGuard(() => emit('changed'));
@@ -70,7 +85,7 @@ const save = f => guard(() => api.updatePhase(f.id, { name: f.name, color: f.col
 const add = () =>
     guard(async () => {
         await api.createPhase(props.projectId, draft);
-        Object.assign(draft, { name: '', color: '#64748b', is_closed: false });
+        Object.assign(draft, { name: '', color: DEFAULT_COLOR, is_closed: false });
     });
 
 // Con tareas hay que elegir adónde van; el selector reemplaza al prompt() con numeración manual.
@@ -112,6 +127,26 @@ const reorder = (from, to) =>
     }
     .name {
         flex: 1;
+    }
+    .closed-mark {
+        color: var(--accent);
+        font-weight: 600;
+    }
+    .swatches {
+        display: inline-flex;
+        gap: 6px;
+    }
+    .swatch {
+        width: 22px;
+        height: 22px;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid var(--line-strong);
+
+        &[aria-pressed='true'] {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
     }
 }
 

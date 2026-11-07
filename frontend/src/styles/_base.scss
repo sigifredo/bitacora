@@ -4,27 +4,55 @@
     box-sizing: border-box;
 }
 
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
 body {
     margin: 0;
-    font:
-        14px/1.45 'Inter Variable',
-        system-ui,
-        sans-serif;
+    font: 14px/1.45 var(--font-ui);
     background: var(--bg);
     color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
 #app {
     display: flex;
     min-height: 100vh;
 }
+
 a {
     color: var(--accent);
     text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
 }
+
 h1 {
     font-size: 22px;
+    line-height: 28px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
     margin: 0 0 6px;
+}
+h2 {
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+h3 {
+    font-size: 15px;
+    line-height: 22px;
+    font-weight: 600;
+}
+
+::selection {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 // Utilidades
@@ -40,6 +68,15 @@ h1 {
 .error {
     color: var(--danger);
 }
+.num,
+.count,
+.due,
+.progress-label {
+    font-variant-numeric: tabular-nums;
+}
+.mono {
+    font-family: var(--font-mono);
+}
 
 // En el modo cajón la barra superior y el contenido se apilan en bloque (ver App.vue).
 @media (max-width: $breakpoint-drawer) {
@@ -51,5 +88,15 @@ h1 {
 @media (max-width: $breakpoint-compact) {
     h1 {
         font-size: 19px;
+        line-height: 24px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
     }
 }

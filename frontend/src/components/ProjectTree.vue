@@ -39,19 +39,22 @@ const { collapsed, toggle } = useCollapsed();
         a {
             flex: 1;
             padding: 3px 6px;
-            border-radius: 4px;
+            border-radius: var(--radius-row);
             color: var(--text);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
 
+            &:hover {
+                background: color-mix(in srgb, var(--line) 55%, transparent);
+                text-decoration: none;
+            }
             &.active {
-                @include tint(16%);
-                color: var(--accent);
+                background: var(--line);
                 font-weight: 600;
             }
             &.archived {
-                opacity: 0.5;
+                opacity: 0.55;
             }
         }
     }
