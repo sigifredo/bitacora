@@ -1,5 +1,7 @@
 package app.bitacora.ui
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -58,6 +60,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import app.bitacora.R
+import app.bitacora.ui.theme.BitacoraTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -95,7 +101,7 @@ fun ErrorDialog(vm: AppViewModel) {
     val message = vm.error ?: return
     AlertDialog(
         onDismissRequest = { vm.error = null },
-        confirmButton = { TextButton({ vm.error = null }) { Text("Aceptar") } },
+        confirmButton = { TextButton({ vm.error = null }) { Text("Cerrar") } },
         text = { Text(message) },
     )
 }
@@ -109,14 +115,16 @@ fun LoginScreen(vm: AppViewModel) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        Text("Bitácora", style = MaterialTheme.typography.headlineLarge)
+        Image(painterResource(R.drawable.ic_bitacora_mark), contentDescription = null, modifier = Modifier.size(64.dp).align(Alignment.CenterHorizontally))
+        Spacer(Modifier.height(12.dp))
+        Text("Bitácora", Modifier.fillMaxWidth(), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
         Spacer(Modifier.height(24.dp))
         OutlinedTextField(
             server, { server = it }, Modifier.fillMaxWidth(), singleLine = true,
             label = { Text("Servidor") }, placeholder = { Text("https://midominio.com/bitacora") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
         )
-        OutlinedTextField(username, { username = it }, Modifier.fillMaxWidth().padding(top = 8.dp), singleLine = true, label = { Text("Usuario") })
+        OutlinedTextField(username, { username = it }, Modifier.fillMaxWidth().padding(top = 8.dp), singleLine = true, shape = MaterialTheme.shapes.small, label = { Text("Usuario") })
         OutlinedTextField(
             password, { password = it }, Modifier.fillMaxWidth().padding(top = 8.dp), singleLine = true, label = { Text("Contraseña") },
             visualTransformation = PasswordVisualTransformation(),
@@ -208,7 +216,7 @@ private fun PendingList(vm: AppViewModel) {
     }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(search, { search = it }, Modifier.weight(1f), singleLine = true, placeholder = { Text("Buscar tarea…") })
+            OutlinedTextField(search, { search = it }, Modifier.weight(1f), singleLine = true, shape = MaterialTheme.shapes.small, placeholder = { Text("Buscar tarea…") })
             Box(Modifier.padding(start = 8.dp)) {
                 OutlinedButton({ menu = true }) { Text(projectNames[projectId] ?: "Todos", maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 100.dp)) }
                 DropdownMenu(menu, { menu = false }) {
@@ -277,7 +285,13 @@ private fun ProjectTree(vm: AppViewModel) {
                     Text(p.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text("${p.totalDone}/${p.totalTasks} tareas", style = MaterialTheme.typography.bodySmall)
                     if (p.totalTasks > 0) {
-                        LinearProgressIndicator(progress = { p.totalDone.toFloat() / p.totalTasks }, Modifier.fillMaxWidth().padding(top = 4.dp))
+                        LinearProgressIndicator(
+                            progress = { p.totalDone.toFloat() / p.totalTasks },
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp).height(6.dp).clip(CircleShape),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = BitacoraTheme.colors.line,
+                            drawStopIndicator = {},
+                        )
                     }
                 }
                 if (hasChildren) {
@@ -369,7 +383,13 @@ private fun BoardView(vm: AppViewModel, onOpen: (Task) -> Unit) {
 @Composable
 private fun TaskCard(vm: AppViewModel, task: Task, phases: List<Phase>, onOpen: (Task) -> Unit) {
     var menu by remember { mutableStateOf(false) }
-    Card(Modifier.fillMaxWidth().clickable { onOpen(task) }, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+    Card(
+        Modifier.fillMaxWidth().clickable { onOpen(task) },
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = BitacoraTheme.colors.panel),
+        border = BorderStroke(1.dp, BitacoraTheme.colors.line),
+        elevation = CardDefaults.cardElevation(0.dp),
+    ) {
         Row(Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
                 Text(task.title, style = MaterialTheme.typography.titleSmall)

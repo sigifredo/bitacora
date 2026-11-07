@@ -63,7 +63,7 @@ fun TaskDialog(vm: AppViewModel, task: Task?, phases: List<Phase>, projectId: In
         title = { Text(if (task == null) "Nueva tarea" else "Editar tarea") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(title, { title = it }, Modifier.fillMaxWidth(), label = { Text("Título") })
+                OutlinedTextField(title, { title = it }, Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.small, label = { Text("Título") })
                 OutlinedTextField(description, { description = it }, Modifier.fillMaxWidth(), label = { Text("Descripción") }, minLines = 2)
                 Choice("Fase", phases.firstOrNull { it.id == phaseId }?.name ?: "", phases.map { it.name }) { phaseId = phases[it].id }
                 Choice("Prioridad", priorityLabel(priority), PRIORITIES.map { it.second }) { priority = PRIORITIES[it].first }
