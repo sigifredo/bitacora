@@ -2,13 +2,13 @@
 
 $sidebar-width: 260px;
 $column-width: 280px;
-$radius: 6px;
+$radius: 8px;
 
 // Por debajo de $breakpoint-drawer la barra lateral pasa a ser un cajón que se abre desde la barra superior.
 $breakpoint-drawer: 860px;
 $breakpoint-compact: 600px;
 
-@mixin panel($radius: $radius) {
+@mixin panel($radius: var(--radius-card)) {
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: $radius;

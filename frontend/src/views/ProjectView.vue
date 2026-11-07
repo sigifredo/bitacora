@@ -10,13 +10,13 @@
         <header class="page-head">
             <div>
                 <h1>
-                    {{ project.name }} <span class="badge">{{ STATUS[project.status] }}</span>
+                    {{ project.name }} <span v-if="project.status !== 'active'" class="badge" :class="`st-${project.status}`">{{ STATUS[project.status] }}</span>
                 </h1>
                 <p v-if="project.description" class="muted pre">{{ project.description }}</p>
                 <p class="muted">
                     <span v-if="project.start_date">Inicio {{ project.start_date }} · </span>
                     <span v-if="project.due_date">Límite {{ project.due_date }} · </span>
-                    {{ project.total_done_count }}/{{ project.total_task_count }} tareas ({{ pct }}%)
+                    {{ project.total_done_count }}/{{ project.total_task_count }} tareas ({{ pct }} %)
                     <span v-if="children.length">· propias {{ project.done_count }}/{{ project.task_count }}</span>
                 </p>
             </div>
@@ -223,9 +223,14 @@ onMounted(load);
     margin-bottom: 12px;
 
     .chip {
-        @include panel(14px);
+        @include panel(999px);
         padding: 2px 10px;
         color: var(--text);
+
+        &:hover {
+            border-color: var(--line-strong);
+            text-decoration: none;
+        }
 
         small {
             color: var(--muted);
@@ -245,11 +250,18 @@ onMounted(load);
     button:not(.primary) {
         border-color: transparent;
         background: none;
+        color: var(--muted);
+
+        &:hover {
+            color: var(--text);
+        }
     }
     button.active {
         background: var(--panel);
         border-color: var(--line);
+        color: var(--text);
         font-weight: 600;
+        box-shadow: inset 0 -2px 0 var(--accent);
     }
 }
 

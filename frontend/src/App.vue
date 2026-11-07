@@ -2,13 +2,13 @@
     <template v-if="auth.user">
         <header class="topbar">
             <button class="icon" :aria-expanded="menuOpen" aria-controls="sidebar" aria-label="Abrir menú" @click="menuOpen = !menuOpen">☰</button>
-            <router-link to="/" class="brand"><img :src="logo" alt="" />bitácora</router-link>
+            <router-link to="/" class="brand"><BrandMark :size="24" />Bitácora</router-link>
         </header>
         <div v-if="menuOpen" class="sidebar-backdrop" @click="menuOpen = false" />
         <aside id="sidebar" class="sidebar" :class="{ open: menuOpen }">
             <router-link to="/" class="brand">
-                <img :src="logo" alt="" />
-                bitácora <small class="version">v{{ version }}</small></router-link
+                <BrandMark :size="28" />
+                Bitácora <small class="version">v{{ version }}</small></router-link
             >
             <router-link to="/" exact-active-class="active" class="nav-pending">Tareas pendientes</router-link>
             <div class="sidebar-head">
@@ -39,6 +39,7 @@
 import { ref, watch, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { auth, store } from './store.js';
+import BrandMark from './components/BrandMark.vue';
 import ProjectTree from './components/ProjectTree.vue';
 import ProjectForm from './components/ProjectForm.vue';
 import PasswordForm from './components/PasswordForm.vue';
@@ -49,7 +50,6 @@ const menuOpen = ref(false); // solo se ve en pantallas estrechas (la barra late
 const creating = ref(false);
 const changingPassword = ref(false);
 const version = __APP_VERSION__;
-const logo = `${import.meta.env.BASE_URL}logo.svg`;
 
 // Tras el login el título de la pestaña incluye la versión.
 watchEffect(() => {
@@ -80,20 +80,23 @@ async function logout() {
 .main {
     flex: 1;
     min-width: 0;
-    padding: 22px 28px;
+    padding: var(--s-5) var(--s-6);
 }
 
 .brand {
-    font-family: 'Kalam', cursive;
-    font-weight: 700;
-    font-size: 18px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    column-gap: 6px;
+    row-gap: 2px;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.02em;
     color: var(--text);
 
-    img {
-        width: 22px;
-        height: 22px;
-        vertical-align: -5px;
-        margin-right: 6px;
+    &:hover {
+        text-decoration: none;
     }
 }
 
@@ -111,29 +114,35 @@ async function logout() {
     flex-direction: column;
 
     .brand {
-        display: block;
+        column-gap: 7px;
         margin-bottom: 18px;
+        font-size: 16px;
 
         .version {
-            font-family: 'Inter Variable', system-ui, sans-serif;
+            font-family: var(--font-mono);
             font-weight: 400;
             font-size: 11px;
+            letter-spacing: 0;
             color: var(--muted);
         }
     }
 }
 
+// Fila activa: relleno neutro y peso 600, sin color de acento en el texto.
 .nav-pending {
     display: block;
     padding: 5px 8px;
     margin-bottom: 14px;
-    border-radius: 4px;
+    border-radius: var(--radius-row);
     color: var(--text);
     font-weight: 600;
 
+    &:hover {
+        background: color-mix(in srgb, var(--line) 55%, transparent);
+        text-decoration: none;
+    }
     &.active {
-        @include tint(16%);
-        color: var(--accent);
+        background: var(--line);
     }
 }
 
@@ -144,6 +153,7 @@ async function logout() {
     color: var(--muted);
     text-transform: uppercase;
     font-size: 11px;
+    font-weight: 500;
     letter-spacing: 0.06em;
     margin-bottom: 6px;
 }
@@ -158,12 +168,15 @@ async function logout() {
 
     > a {
         padding: 3px 6px;
-        border-radius: 4px;
+        border-radius: var(--radius-row);
         color: var(--text);
 
+        &:hover {
+            background: color-mix(in srgb, var(--line) 55%, transparent);
+            text-decoration: none;
+        }
         &.active {
-            @include tint(16%);
-            color: var(--accent);
+            background: var(--line);
             font-weight: 600;
         }
     }
@@ -214,13 +227,16 @@ async function logout() {
         height: 100dvh;
         transform: translateX(-100%);
         visibility: hidden; // el cajón cerrado no debe recibir foco de teclado
+        box-shadow: none;
         transition:
-            transform 0.2s,
-            visibility 0.2s;
+            transform var(--t-base) var(--ease),
+            visibility var(--t-base) var(--ease),
+            box-shadow var(--t-base) var(--ease);
 
         &.open {
             transform: none;
             visibility: visible;
+            box-shadow: var(--shadow-pop);
         }
     }
 
@@ -229,11 +245,11 @@ async function logout() {
         position: fixed;
         inset: 0;
         z-index: 19;
-        background: rgba(0, 0, 0, 0.45);
+        background: var(--overlay);
     }
 
     .main {
-        padding: 16px 18px;
+        padding: var(--s-4) 18px;
     }
 }
 

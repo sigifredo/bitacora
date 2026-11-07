@@ -71,7 +71,7 @@ onBeforeUnmount(() => {
 .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: var(--overlay);
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -82,14 +82,19 @@ onBeforeUnmount(() => {
 // El contenido llega por el slot y pertenece al componente que abre el modal: de ahí los :deep.
 .modal {
     background: var(--panel);
-    border-radius: 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-modal);
+    box-shadow: var(--shadow-pop);
     width: min(560px, 94vw);
-    padding: 18px 20px;
+    padding: 20px 22px;
     max-height: 84vh;
     overflow-y: auto;
 
     h3 {
         margin: 0;
+        font-size: 18px;
+        line-height: 24px;
+        letter-spacing: -0.01em;
     }
     > header {
         display: flex;
@@ -121,7 +126,9 @@ onBeforeUnmount(() => {
         width: 100vw;
         max-height: 100dvh;
         min-height: 100dvh;
+        border: 0;
         border-radius: 0;
+        box-shadow: none;
         padding: 14px;
 
         :deep(.row) {

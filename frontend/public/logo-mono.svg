@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <defs>
+    <mask id="g" maskUnits="userSpaceOnUse" x="0" y="0" width="96" height="96">
+      <rect width="96" height="96" fill="#fff"/>
+      <path d="M48 10 L48 34 A14 14 0 0 0 62 48 L86 48" stroke="#000" stroke-width="3.6" fill="none"/>
+    </mask>
+  </defs>
+  <g mask="url(#g)"><path fill="currentColor" d="M14 28 A14 14 0 0 1 28 14 L42.2 14 A14 14 0 0 1 52.1 18.1 L77.9 43.9 A14 14 0 0 1 82 53.8 L82 68 A14 14 0 0 1 68 82 L28 82 A14 14 0 0 1 14 68 Z"/></g>
+</svg>
