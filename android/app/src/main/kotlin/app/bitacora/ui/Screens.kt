@@ -3,6 +3,7 @@ package app.bitacora.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -69,6 +70,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.widthIn
@@ -86,7 +93,6 @@ import java.time.LocalDate
 import app.bitacora.data.Phase
 import app.bitacora.data.Project
 import app.bitacora.data.Task
-import app.bitacora.data.priorityLabel
 import app.bitacora.data.priorityRank
 import kotlinx.coroutines.launch
 
@@ -135,6 +141,10 @@ fun LoginScreen(vm: AppViewModel) {
             Modifier.fillMaxWidth().padding(top = 16.dp),
             enabled = !vm.loading && server.isNotBlank() && username.isNotBlank() && password.isNotEmpty(),
         ) { Text(if (vm.loading) "Entrando…" else "Entrar") }
+        Text(
+            "v${BuildConfig.VERSION_NAME}", Modifier.fillMaxWidth().padding(top = 24.dp), textAlign = TextAlign.Center,
+            color = BitacoraTheme.colors.muted, fontFamily = FontFamily.Monospace, fontSize = 11.sp,
+        )
     }
     ErrorDialog(vm)
 }
@@ -207,7 +217,7 @@ private fun PendingList(vm: AppViewModel) {
     var search by vm::pendingSearch
     var projectId by vm::pendingProjectFilter
     var menu by remember { mutableStateOf(false) }
-    val today = remember { LocalDate.now().toString() }
+    val today = remember { todayIso() }
     val projectNames = remember(vm.pending) { vm.pending.associate { it.projectId to it.projectName } }
     val rows = vm.pending.filter {
         (projectId == null || it.projectId == projectId) && (search.isBlank() || it.title.contains(search.trim(), ignoreCase = true))
@@ -228,7 +238,7 @@ private fun PendingList(vm: AppViewModel) {
         Text("${rows.size} tareas", Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.bodySmall)
         HorizontalDivider(Modifier.padding(top = 8.dp))
         if (rows.isEmpty()) {
-            Box(Modifier.fillMaxSize(), Alignment.Center) { Text(if (vm.loading) "Cargando…" else "No hay tareas pendientes") }
+            EmptyState(if (vm.loading) "Cargando…" else "No hay tareas pendientes.")
         } else {
             LazyColumn(Modifier.fillMaxSize()) {
                 items(rows, key = { it.id }) { t ->
@@ -236,14 +246,15 @@ private fun PendingList(vm: AppViewModel) {
                         Text(t.title, style = MaterialTheme.typography.titleSmall)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(8.dp).background(parseColor(t.phaseColor), CircleShape))
-                            Text(" ${t.projectName} · ${t.phaseName} · ${priorityLabel(t.priority)}", style = MaterialTheme.typography.bodySmall)
+                            Text(" ${t.projectName} · ${t.phaseName} · ", style = MaterialTheme.typography.bodySmall)
+                            PriorityBadge(t.priority)
                         }
                         val meta = listOfNotNull(t.assigneeName, t.dueDate?.let { "vence $it" })
                         if (meta.isNotEmpty()) {
-                            val overdue = t.dueDate != null && t.dueDate < today
+                            val overdue = t.isOverdue(today)
                             Text(
                                 meta.joinToString(" · "), style = MaterialTheme.typography.bodySmall,
-                                color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = dueColor(overdue), fontWeight = if (overdue) FontWeight.SemiBold else null,
                             )
                         }
                     }
@@ -269,7 +280,7 @@ private fun ProjectTree(vm: AppViewModel) {
         walk(null, 0)
     }
     if (rows.isEmpty()) {
-        Box(Modifier.fillMaxSize(), Alignment.Center) { Text(if (vm.loading) "Cargando…" else "No hay proyectos") }
+        EmptyState(if (vm.loading) "Cargando…" else "Aún no hay proyectos.")
         return
     }
     LazyColumn(Modifier.fillMaxSize()) {
@@ -280,8 +291,11 @@ private fun ProjectTree(vm: AppViewModel) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(p.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text("${p.totalDone}/${p.totalTasks} tareas", style = MaterialTheme.typography.bodySmall)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(p.name, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        StatusBadge(p.status, Modifier.padding(start = 8.dp))
+                    }
+                    Text("${p.totalDone}/${p.totalTasks} tareas · ${p.percent} %", style = MaterialTheme.typography.bodySmall, color = BitacoraTheme.colors.muted)
                     if (p.totalTasks > 0) {
                         LinearProgressIndicator(
                             progress = { p.totalDone.toFloat() / p.totalTasks },
@@ -325,6 +339,7 @@ fun ProjectScreen(vm: AppViewModel) {
                 Tab(vm.projectTab == 1, { vm.projectTab = 1 }, text = { Text("Tabla") })
             }
             if (vm.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
+            project?.let { ProjectHeader(vm, it) }
             // Las tareas de un subproyecto se editan en el propio subproyecto: cada uno tiene sus fases.
             val open = { t: Task -> if (t.projectId == vm.currentProjectId) vm.openEditor(t) else vm.openProject(t.projectId) }
             if (vm.projectTab == 0) BoardView(vm, open) else TableView(vm, open)
@@ -333,12 +348,56 @@ fun ProjectScreen(vm: AppViewModel) {
     ErrorDialog(vm)
 }
 
+/** Cabecera del proyecto, como el `page-head` de la web: ruta, estado, descripción, fechas, progreso y subproyectos. */
+@Composable
+private fun ProjectHeader(vm: AppViewModel, project: Project) {
+    val c = BitacoraTheme.colors
+    val crumbs = generateSequence(vm.projects.firstOrNull { it.id == project.parentId }) { p -> vm.projects.firstOrNull { it.id == p.parentId } }.toList().reversed()
+    val children = vm.projects.filter { it.parentId == project.id }.sortedBy { it.position }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (crumbs.isNotEmpty()) Text(crumbs.joinToString(" / ") { it.name } + " /", style = MaterialTheme.typography.bodySmall, color = c.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(project.name, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            StatusBadge(project.status, Modifier.padding(start = 8.dp))
+        }
+        project.description?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = c.muted, maxLines = 3, overflow = TextOverflow.Ellipsis) }
+        val info = buildList {
+            project.startDate?.let { add("Inicio $it") }
+            project.dueDate?.let { add("Límite $it") }
+            add("${project.totalDone}/${project.totalTasks} tareas (${project.percent} %)")
+            if (children.isNotEmpty()) add("propias ${project.ownDone}/${project.ownTasks}")
+        }
+        Text(info.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = c.muted)
+        if (project.totalTasks > 0) {
+            LinearProgressIndicator(
+                progress = { project.totalDone.toFloat() / project.totalTasks },
+                modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+                color = MaterialTheme.colorScheme.primary, trackColor = c.line, drawStopIndicator = {},
+            )
+        }
+        if (children.isNotEmpty()) {
+            Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Subproyectos:", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                children.forEach { ch ->
+                    Row(
+                        Modifier.clip(CircleShape).border(1.dp, c.line, CircleShape).background(c.panel).clickable { vm.openProject(ch.id) }.padding(horizontal = 10.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(ch.name, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                        Text(" ${ch.totalDone}/${ch.totalTasks}", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                    }
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BoardView(vm: AppViewModel, onOpen: (Task) -> Unit) {
     val phases = vm.phases
     if (phases.isEmpty()) {
-        Box(Modifier.fillMaxSize(), Alignment.Center) { Text(if (vm.loading) "Cargando…" else "Sin fases") }
+        EmptyState(if (vm.loading) "Cargando…" else "Sin fases.")
         return
     }
     val pager = rememberPagerState { phases.size }
@@ -351,7 +410,7 @@ private fun BoardView(vm: AppViewModel, onOpen: (Task) -> Unit) {
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(10.dp).background(parseColor(ph.color), CircleShape))
-                            Text("  ${ph.name} (${vm.tasks.count { it.phaseId == ph.id }})")
+                            Text("  ${ph.name}${if (ph.isClosed) " ✓" else ""} (${vm.tasks.count { it.phaseId == ph.id }})")
                         }
                     },
                 )
@@ -360,11 +419,15 @@ private fun BoardView(vm: AppViewModel, onOpen: (Task) -> Unit) {
         HorizontalPager(pager, Modifier.fillMaxSize()) { page ->
             val phase = phases[page]
             val inPhase = vm.tasks.filter { it.phaseId == phase.id }
-            if (inPhase.isEmpty()) {
-                Box(Modifier.fillMaxSize(), Alignment.Center) { Text("Sin tareas") }
-            } else {
-                LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(inPhase, key = { it.id }) { TaskCard(vm, it, phases, onOpen) }
+            Column(Modifier.fillMaxSize()) {
+                // Borde superior de 3 dp con el color de la fase, como la cabecera de columna de la web.
+                Box(Modifier.fillMaxWidth().height(3.dp).background(parseColor(phase.color)))
+                if (inPhase.isEmpty()) {
+                    EmptyState("Sin tareas.")
+                } else {
+                    LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(inPhase, key = { it.id }) { TaskCard(vm, it, phases, onOpen) }
+                    }
                 }
             }
         }
@@ -385,10 +448,16 @@ private fun TaskCard(vm: AppViewModel, task: Task, phases: List<Phase>, onOpen: 
         Row(Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
                 Text(task.title, style = MaterialTheme.typography.titleSmall)
-                val meta = listOfNotNull(priorityLabel(task.priority), task.dueDate, task.assigneeName).joinToString(" · ")
-                Text(meta, style = MaterialTheme.typography.bodySmall)
-                if (task.checklist.isNotEmpty()) {
-                    Text("☑ ${task.checklist.count { it.done }}/${task.checklist.size}", style = MaterialTheme.typography.bodySmall)
+                Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    PriorityBadge(task.priority)
+                    if (task.checklist.isNotEmpty()) {
+                        Text("☑ ${task.checklist.count { it.done }}/${task.checklist.size}", style = MaterialTheme.typography.bodySmall, color = BitacoraTheme.colors.muted)
+                    }
+                    task.assigneeUsername?.let { Avatar(it) }
+                    task.dueDate?.let {
+                        val overdue = task.isOverdue(todayIso())
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = dueColor(overdue), fontWeight = if (overdue) FontWeight.SemiBold else null)
+                    }
                 }
             }
             Box {
@@ -423,8 +492,9 @@ private fun TableView(vm: AppViewModel, onOpen: (Task) -> Unit) {
         }
         HorizontalDivider()
         if (rows.isEmpty()) {
-            Box(Modifier.fillMaxSize(), Alignment.Center) { Text("Sin tareas") }
+            EmptyState("Sin tareas.")
         } else {
+            val today = todayIso()
             LazyColumn(Modifier.fillMaxSize()) {
                 items(rows, key = { it.id }) { t ->
                     Column(Modifier.fillMaxWidth().clickable { onOpen(t) }.padding(horizontal = 16.dp, vertical = 10.dp)) {
@@ -432,11 +502,17 @@ private fun TableView(vm: AppViewModel, onOpen: (Task) -> Unit) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(8.dp).background(parseColor(t.phaseColor), CircleShape))
                             Text(" ${t.phaseName} · ", style = MaterialTheme.typography.bodySmall)
+                            PriorityBadge(t.priority)
+                            val overdue = t.isOverdue(today)
+                            t.dueDate?.let {
+                                Text(" · ", style = MaterialTheme.typography.bodySmall)
+                                Text(it, style = MaterialTheme.typography.bodySmall, color = dueColor(overdue), fontWeight = if (overdue) FontWeight.SemiBold else null)
+                            }
                             val meta = listOfNotNull(
-                                priorityLabel(t.priority), t.dueDate, t.assigneeName,
+                                t.assigneeName,
                                 t.projectName.takeIf { t.projectId != vm.currentProjectId },
                             ).joinToString(" · ")
-                            Text(meta, style = MaterialTheme.typography.bodySmall)
+                            if (meta.isNotEmpty()) Text(" · $meta", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                     HorizontalDivider()

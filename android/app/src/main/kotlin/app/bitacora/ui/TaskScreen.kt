@@ -13,6 +13,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -142,7 +144,12 @@ fun TaskScreen(vm: AppViewModel, editor: TaskEditor) {
             onDismissRequest = { confirmDelete = false },
             title = { Text("Eliminar tarea") },
             text = { Text("¿Eliminar «${task.title}»? No se puede deshacer.") },
-            confirmButton = { TextButton({ confirmDelete = false; vm.deleteTask(task, onClose) }) { Text("Eliminar") } },
+            confirmButton = {
+                Button(
+                    { confirmDelete = false; vm.deleteTask(task, onClose) },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
+                ) { Text("Eliminar") }
+            },
             dismissButton = { TextButton({ confirmDelete = false }) { Text("Cancelar") } },
         )
     }

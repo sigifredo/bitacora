@@ -25,11 +25,18 @@ data class Project(
     val position: Int,
     val totalTasks: Int,
     val totalDone: Int,
+    val startDate: String? = null,
+    val dueDate: String? = null,
+    val ownTasks: Int = 0,
+    val ownDone: Int = 0,
 ) {
+    val percent get() = if (totalTasks > 0) Math.round(totalDone * 100f / totalTasks) else 0
+
     companion object {
         fun from(o: JSONObject) = Project(
             o.int("id")!!, o.int("parent_id"), o.text("name") ?: "", o.text("description"), o.text("status") ?: "active",
             o.int("position") ?: 0, o.int("total_task_count") ?: 0, o.int("total_done_count") ?: 0,
+            o.text("start_date"), o.text("due_date"), o.int("task_count") ?: 0, o.int("done_count") ?: 0,
         )
     }
 }
@@ -41,6 +48,8 @@ data class Phase(val id: Int, val projectId: Int, val name: String, val color: S
 }
 
 data class ChecklistItem(val text: String, val done: Boolean)
+
+val STATUSES = mapOf("active" to "Activo", "paused" to "En pausa", "completed" to "Completado", "archived" to "Archivado")
 
 val PRIORITIES = listOf("low" to "Baja", "normal" to "Normal", "high" to "Alta", "urgent" to "Urgente")
 fun priorityLabel(key: String) = PRIORITIES.firstOrNull { it.first == key }?.second ?: key
@@ -61,7 +70,11 @@ data class Task(
     val assigneeName: String?,
     val dueDate: String?,
     val isClosed: Boolean,
+    val assigneeUsername: String? = null,
 ) {
+    /** Vencida: con fecha pasada y fuera de una fase cerrada (igual que `isOverdue` de la web). */
+    fun isOverdue(today: String) = dueDate != null && !isClosed && dueDate < today
+
     companion object {
         fun from(o: JSONObject): Task {
             val items = o.optJSONArray("checklist") ?: JSONArray()
@@ -70,7 +83,7 @@ data class Task(
                 o.text("phase_name") ?: "", o.text("phase_color") ?: "#64748b", o.text("title") ?: "", o.text("description"),
                 (0 until items.length()).map { items.getJSONObject(it).let { i -> ChecklistItem(i.text("text") ?: "", i.flag("done")) } },
                 o.text("priority") ?: "normal", o.int("assignee_id"), o.text("assignee_full_name") ?: o.text("assignee_name"),
-                o.text("due_date"), o.flag("is_closed"),
+                o.text("due_date"), o.flag("is_closed"), o.text("assignee_name"),
             )
         }
     }
