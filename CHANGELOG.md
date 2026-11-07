@@ -3,7 +3,7 @@
 Cambios relevantes del backend y el frontend (comparten versión). La app de Android tiene su propio registro en [`android/CHANGELOG.md`](android/CHANGELOG.md).
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); la versión vigente está en `backend/VERSION`.
 
-## [Sin publicar]
+## [0.9.0] - 2026-11-07
 
 ### Cambiado
 

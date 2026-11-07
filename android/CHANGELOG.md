@@ -2,7 +2,7 @@
 
 La versión de la app es independiente de la del backend y el frontend; la vigente está en `android/VERSION` (el `versionCode` se deriva como `mayor*10000 + menor*100 + parche`). Los cambios del backend y el frontend están en [`../CHANGELOG.md`](../CHANGELOG.md).
 
-## [Sin publicar]
+## [0.2.0] - 2026-11-07
 
 ### Cambiado
 
