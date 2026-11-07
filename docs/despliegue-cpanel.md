@@ -2,10 +2,10 @@
 
 Esta guía instala Bitácora en un subdominio (por ejemplo `tareas.tudominio.com`) de un hosting con cPanel. Los archivos necesarios están en `deploy/`:
 
-| Archivo                       | Contenido                                                                                            |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `bitacora-backend-0.9.0.zip`  | API en PHP, `database/schema.sql`, `database/seed-admin.sql` y `public/index.php` con su `.htaccess` |
-| `bitacora-frontend-0.9.0.zip` | Interfaz compilada (`index.html` y `assets/`) para la raíz de un dominio o subdominio                |
+| Archivo | Contenido |
+| --- | --- |
+| `bitacora-backend-0.9.0.zip` | API en PHP (`src/`) y `public/index.php` con su `.htaccess`; no incluye los SQL, que se importan desde el repositorio |
+| `bitacora-frontend-0.9.0.zip` | Interfaz compilada (`index.html` y `assets/`) para la raíz de un dominio o subdominio |
 
 `deploy/` no está en git: los zips se generan con los comandos de la sección [Generar los zips](#generar-los-zips). El número del nombre es el de `backend/VERSION`.
 
@@ -15,7 +15,7 @@ Estructura final en el servidor (`USUARIO` es tu usuario de cPanel):
 /home/USUARIO/bitacora/
     .env                 <- lo creas tú, nunca dentro de public
     VERSION
-    database/  src/
+    src/
     public/              <- raíz web del subdominio
         index.php  .htaccess  index.html  assets/
 ```
@@ -86,7 +86,7 @@ En **SSL/TLS Status** ejecuta **Run AutoSSL** para el subdominio y espera a que 
 
 ### 8. Crear las tablas
 
-El servidor no necesita shell: todo se hace en **phpMyAdmin**. Selecciona la base de datos vacía del paso 3, ve a **Importar** y sube `database/schema.sql` (está en el zip del backend, en `bitacora/database/`; descárgalo desde el Administrador de archivos o usa el del repositorio). Crea el esquema completo. Si alguna tabla ya existe, la importación falla: vacía la base antes de repetirla.
+El servidor no necesita shell: todo se hace en **phpMyAdmin**. Selecciona la base de datos vacía del paso 3, ve a **Importar** y sube `backend/database/schema.sql` (está en el repositorio, en `backend/database/`; no va en el zip porque la aplicación no lo lee). Crea el esquema completo. Si alguna tabla ya existe, la importación falla: vacía la base antes de repetirla.
 
 ### 9. Crear el primer administrador
 
@@ -94,7 +94,7 @@ El servidor no necesita shell: todo se hace en **phpMyAdmin**. Selecciona la bas
     ```bash
     php -r "echo password_hash('UnaContraseñaLarga', PASSWORD_BCRYPT, ['cost' => 10]), PHP_EOL;"
     ```
-2. Copia `database/seed-admin.sql`, sustituye `TU_USUARIO`, `TU NOMBRE COMPLETO`, `tu@correo.com` y `TU_HASH_BCRYPT`, y ejecútalo en la pestaña **SQL** de phpMyAdmin (o súbelo con **Importar**).
+2. Copia `backend/database/seed-admin.sql` del repositorio, sustituye `TU_USUARIO`, `TU NOMBRE COMPLETO`, `tu@correo.com` y `TU_HASH_BCRYPT`, y ejecútalo en la pestaña **SQL** de phpMyAdmin (o súbelo con **Importar**).
 3. Cambia la contraseña desde la interfaz (botón **Contraseña**) tras entrar. No guardes el SQL con el hash modificado dentro del repositorio ni del servidor.
 
 ### 10. Probar
@@ -105,14 +105,14 @@ El servidor no necesita shell: todo se hace en **phpMyAdmin**. Selecciona la bas
 
 ## Si algo falla
 
-| Síntoma                                                               | Causa probable                                                                                                        |
-| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Error 500 en `/api/...` con `could not find driver` en el log         | Falta la extensión `pdo_mysql` en esa versión de PHP (paso 6)                                                         |
-| Error 500 y `Access denied for user`                                  | Datos incorrectos en `.env` o usuario no asociado a la base (pasos 3 y 4)                                             |
-| `/api/version` da 404                                                 | La raíz del subdominio no es `bitacora/public` o `.htaccess` no está (pasos 2 y 5)                                    |
-| La página carga pero las rutas como `/projects/3` dan 404 al recargar | `.htaccess` no se subió o `mod_rewrite` desactivado: pide al hosting que lo active                                    |
-| El login responde bien pero la sesión se pierde                       | Entras por HTTP en lugar de HTTPS, o por otro dominio distinto al configurado                                         |
-| Pantalla en blanco                                                    | Abre la consola del navegador. Casi siempre el `index.html` y `assets/` quedaron en una carpeta distinta de `public/` |
+| Síntoma | Causa probable |
+| --- | --- |
+| Error 500 en `/api/...` con `could not find driver` en el log | Falta la extensión `pdo_mysql` en esa versión de PHP (paso 6) |
+| Error 500 y `Access denied for user` | Datos incorrectos en `.env` o usuario no asociado a la base (pasos 3 y 4) |
+| `/api/version` da 404 | La raíz del subdominio no es `bitacora/public` o `.htaccess` no está (pasos 2 y 5) |
+| La página carga pero las rutas como `/projects/3` dan 404 al recargar | `.htaccess` no se subió o `mod_rewrite` desactivado: pide al hosting que lo active |
+| El login responde bien pero la sesión se pierde | Entras por HTTP en lugar de HTTPS, o por otro dominio distinto al configurado |
+| Pantalla en blanco | Abre la consola del navegador. Casi siempre el `index.html` y `assets/` quedaron en una carpeta distinta de `public/` |
 
 Los errores de PHP quedan en `error_log`, dentro de `bitacora/public/` o en **Errores** de cPanel.
 
@@ -135,7 +135,7 @@ Desde la raíz del repositorio (necesita `zip` y `pnpm`):
 V=$(cat backend/VERSION)
 pnpm --dir frontend build
 rm -rf deploy/stage && mkdir -p deploy/stage/bitacora/public
-cp -r backend/VERSION backend/.env.example backend/database backend/src deploy/stage/bitacora/
+cp -r backend/VERSION backend/.env.example backend/src deploy/stage/bitacora/
 cp backend/public/index.php backend/public/.htaccess deploy/stage/bitacora/public/
 (cd deploy/stage && zip -qr ../bitacora-backend-$V.zip bitacora)
 (cd frontend/dist && zip -qr ../../deploy/bitacora-frontend-$V.zip .)
