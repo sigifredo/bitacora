@@ -1,6 +1,6 @@
 # Bitácora
 
-Gestor de proyectos personales: proyectos con subproyectos ilimitados, tareas con lista de verificación, fases de kanban configurables por proyecto, vistas de tablero y tabla, y usuarios con roles. La interfaz es adaptable a pantallas estrechas y está en español.
+Gestor de proyectos personales: proyectos con subproyectos ilimitados, tareas con lista de verificación, fases de kanban configurables por proyecto, vistas de tablero y tabla, y usuarios con roles. La interfaz es adaptable a pantallas estrechas y está en español. Además hay una app nativa de Android (Kotlin + Jetpack Compose) que usa la misma API.
 
 PHP 8.3 (API REST sin dependencias, sin Composer; no usar sintaxis exclusiva de 8.4) + Vue 3 (Vite, pnpm) + MariaDB. Versión vigente: ver `backend/VERSION` (la app de Android tiene la suya en `android/VERSION`).
 
@@ -47,6 +47,10 @@ php backend/tests/run.php [filtro]   # pruebas de integración de la API (unos 3
 
 Usan una base de datos aparte (`BITACORA_TEST_DB`, por defecto `project_admin`) que se recrea desde `backend/database/schema.sql` en cada ejecución; el usuario de la base debe poder crearla o tener permisos sobre ella, y el runner se niega a usar `DB_NAME`. El frontend se comprueba con `cd frontend && pnpm build`.
 
+## App de Android
+
+Cliente nativo en `android/` (Android 16 o superior), sin cambios en el backend. Se compila abriendo la carpeta con Android Studio (JDK 17+, SDK 36) o con `cd android && gradle assembleDebug`; en la pantalla de acceso se indica la dirección del servidor, con su prefijo si lo hay (en el emulador, `http://10.0.2.2:8000`). El APK de release se firma con `android/keystore.properties` (fuera de git). Detalle en [`android/README.md`](android/README.md).
+
 ## Modelo
 
 - `projects`: árbol por `parent_id` (profundidad ilimitada).
@@ -60,4 +64,5 @@ Usan una base de datos aparte (`BITACORA_TEST_DB`, por defecto `project_admin`) 
 ## Más documentación
 
 - [`docs/despliegue-cpanel.md`](docs/despliegue-cpanel.md): instalación en un hosting con cPanel y generación de los zips de despliegue.
+- [`android/README.md`](android/README.md): compilación, uso y alcance de la app de Android.
 - [`CHANGELOG.md`](CHANGELOG.md): historial de versiones (la vigente está en `backend/VERSION`).  El de la app de Android está en [`android/CHANGELOG.md`](android/CHANGELOG.md).

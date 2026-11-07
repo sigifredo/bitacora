@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Bitácora: gestor de proyectos personales (tipo OpenProject): proyectos con subproyectos ilimitados, tareas, fases de kanban configurables, vistas tablero y tabla, usuarios con roles. PHP 8.3 (versión de producción; el entorno de desarrollo tiene 8.4, no usar sintaxis ni funciones exclusivas de 8.4) sin dependencias (sin Composer) + Vue 3/Vite/SCSS + MariaDB. La documentación de usuario y los textos de la interfaz están en español.
+Bitácora: gestor de proyectos personales (tipo OpenProject): proyectos con subproyectos ilimitados, tareas, fases de kanban configurables, vistas tablero y tabla, usuarios con roles. Incluye una app nativa de Android (cliente de la misma API, en `android/`). PHP 8.3 (versión de producción; el entorno de desarrollo tiene 8.4, no usar sintaxis ni funciones exclusivas de 8.4) sin dependencias (sin Composer) + Vue 3/Vite/SCSS + MariaDB. La documentación de usuario y los textos de la interfaz están en español.
 
 ## Comandos
 
@@ -17,6 +17,10 @@ cd frontend && pnpm install
 pnpm dev      # :5173; por defecto el proxy de /api apunta a Apache (http://localhost/bitacora/index.php)
 API_TARGET=http://127.0.0.1:8000 API_PREFIX= pnpm dev   # proxy hacia el servidor embebido de PHP
 pnpm build
+
+# Android (desde android/; JDK 17+, SDK 36; sin wrapper de Gradle versionado)
+gradle assembleDebug     # APK en app/build/outputs/apk/debug/
+gradle assembleRelease   # firmado con android/keystore.properties si existe; si no, sin firmar
 ```
 
 No hay linter configurado. Pruebas de integración de la API: `php backend/tests/run.php [filtro]` (el filtro es un texto del nombre de la prueba). Usan una base aparte (`BITACORA_TEST_DB`, por defecto `project_admin`; se aborta si coincide con `DB_NAME`), que se recrea desde `database/schema.sql` en cada ejecución, y un servidor embebido propio con varios workers. Cada prueba es una closure en `backend/tests/cases/*.php` que devuelve un arreglo `nombre => closure`; `Suite` ofrece aserciones y helpers (`project`, `task`, `phases`) y `Client` un cliente HTTP con cookies. Un cambio de esquema se hace en `schema.sql`, porque las pruebas parten de él. Además: `php -l` por archivo y `pnpm build` (el frontend no tiene pruebas automáticas).
@@ -50,7 +54,11 @@ Despliegue en raíz o subcarpeta: el frontend toma el prefijo de `VITE_BASE` en 
 
 Las acciones asíncronas de la interfaz que pueden fallar van envueltas en `useGuard` (`composables/useGuard.js`), que expone `error` para mostrarlo y evita promesas rechazadas sin atender; las fechas «de hoy» salen de `dates.js` (hora local), nunca de `toISOString()`. Filtros y ordenamiento de las tablas de tareas viven en `composables/useTaskTable.js` (un único orden de prioridad: ▲ = urgente primero). `ProjectView` aplica los movimientos del tablero de forma optimista y descarta respuestas obsoletas con `latestOnly()`.
 
-Estilos: la capa global vive en `src/styles/` (`main.scss` carga los parciales: tema, base, formularios, badge, layout y las primitivas compartidas `.toolbar`/`.grid`) y todo lo demás en el `<style scoped lang='scss'>` del componente que lo usa, con sus media queries al lado. Variables Sass, mixins y breakpoints están en `styles/_tokens.scss` (sin salida CSS) y cada SFC los carga con `@use '../styles/tokens' as *;`. Los colores son propiedades CSS (`--bg`, `--accent`…) con modo oscuro por `prefers-color-scheme`, no variables Sass. El contenido que un componente recibe por slot (los formularios dentro de `Modal`) no hereda el ámbito de este: sus reglas van con `:deep()` o en el componente que lo declara.
+Estilos: la capa global vive en `src/styles/` (`main.scss` carga los parciales: tema, base, formularios, badge, layout y las primitivas compartidas `.toolbar`/`.grid`) y todo lo demás en el `<style scoped lang='scss'>` del componente que lo usa, con sus media queries al lado. Variables Sass, mixins y breakpoints están en `styles/_tokens.scss` (sin salida CSS) y cada SFC los carga con `@use '../styles/tokens' as *;`. Los colores son propiedades CSS (`--bg`, `--accent`…) con modo oscuro por `prefers-color-scheme`, no variables Sass; el sistema visual («Esquina»: tokens, tipografía, marca, componentes y reglas) está en `docs/sistema-de-diseno.md` y ningún componente debe llevar colores fijos fuera de los tokens, `BrandMark.vue` y la lista de colores de fase de `PhasesSettings.vue`. La marca dentro de la interfaz es `components/BrandMark.vue`, no `logo.svg`. El contenido que un componente recibe por slot (los formularios dentro de `Modal`) no hereda el ámbito de este: sus reglas van con `:deep()` o en el componente que lo declara.
+
+**Android** (`android/`, Kotlin + Jetpack Compose, `minSdk`/`targetSdk` 36, paquete `app.bitacora`): cliente de la misma API, sin cambios en el backend; usa la sesión por cookie y la cabecera `X-Requested-With: fetch`. `data/Api.kt` es el único punto de red (OkHttp, `PersistentCookieJar` en SharedPreferences; equivale a `frontend/src/api.js`), `data/Models.kt` define los modelos, `AppViewModel.kt` concentra el estado y las acciones (con su propio `guard` análogo a `useGuard`) y `ui/Screens.kt` / `ui/TaskDialog.kt` la interfaz (inicio con «Pendientes» y árbol de proyectos, tablero por fases con «Mover a» en lugar de arrastrar, tabla de tareas, alta y edición de tareas). Quedan fuera la gestión de fases, proyectos y usuarios. El servidor se indica en el login con su prefijo (en el emulador, `http://10.0.2.2:8000`). Si el backend cambia el contrato de una ruta que usa la app, hay que ajustar también `Api.kt`/`Models.kt`.
+
+**Versiones independientes:** backend y frontend comparten versión (`backend/VERSION`, registro en `CHANGELOG.md`); la app de Android tiene la suya (`android/VERSION`, registro en `android/CHANGELOG.md`) y de ella se deriva `versionCode = mayor*10000 + menor*100 + parche`. `/api/version` devuelve la del backend y la app la muestra en «Acerca de». `keystore.properties`, `*.jks` y `local.properties` están fuera de git: no se versionan.
 
 ## Convenciones
 
