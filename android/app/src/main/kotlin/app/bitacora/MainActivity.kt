@@ -16,6 +16,7 @@ import androidx.activity.enableEdgeToEdge
 import app.bitacora.ui.LoginScreen
 import app.bitacora.ui.ProjectScreen
 import app.bitacora.ui.ProjectsScreen
+import app.bitacora.ui.TaskScreen
 import app.bitacora.ui.theme.BitacoraTheme
 
 class MainActivity : ComponentActivity() {
@@ -37,6 +38,10 @@ private fun Root(vm: AppViewModel) {
     when {
         !vm.ready -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
         vm.user == null -> LoginScreen(vm)
+        vm.editor != null -> {
+            BackHandler { vm.closeEditor() }
+            TaskScreen(vm, vm.editor!!)
+        }
         vm.currentProjectId != null -> {
             BackHandler { vm.openProject(null) }
             ProjectScreen(vm)

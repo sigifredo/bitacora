@@ -16,6 +16,9 @@ import app.bitacora.data.User
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
+/** Estado de la pantalla de tarea: `task == null` es un alta. */
+class TaskEditor(val task: Task?, val phases: List<Phase>, val projectId: Int)
+
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     val api = Api(app)
 
@@ -36,8 +39,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** Tareas de todos los proyectos que no están en una fase cerrada (pantalla «Pendientes»). */
     var pending by mutableStateOf<List<Task>>(emptyList())
 
-    /** Tarea pendiente en edición junto con las fases de su proyecto (cada proyecto tiene las suyas). */
-    var pendingEdit by mutableStateOf<Pair<Task, List<Phase>>?>(null)
+    /** Pantalla de tarea abierta (alta o edición), con las fases de su proyecto (cada proyecto tiene las suyas). */
+    var editor by mutableStateOf<TaskEditor?>(null)
 
     // Descarta respuestas de una carga anterior si el usuario ya abrió otro proyecto.
     private var loadSeq = 0
@@ -66,7 +69,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         phases = emptyList()
         tasks = emptyList()
         pending = emptyList()
-        pendingEdit = null
+        editor = null
     }
 
     /** Ejecuta una acción de red mostrando su fallo en `error` en lugar de dejar la excepción sin atender. */
@@ -118,7 +121,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         pending = api.pendingTasks()
     }
 
-    fun editPending(task: Task) = guard { pendingEdit = task to api.phases(task.projectId) }
+    fun editPending(task: Task) = guard { editor = TaskEditor(task, api.phases(task.projectId), task.projectId) }
+
+    /** Abre la pantalla de tarea del proyecto abierto; `task == null` crea una nueva. */
+    fun openEditor(task: Task?) {
+        val id = currentProjectId ?: return
+        if (phases.isNotEmpty()) editor = TaskEditor(task, phases, id)
+    }
+
+    fun closeEditor() {
+        editor = null
+    }
 
     fun openProject(id: Int?) {
         currentProjectId = id

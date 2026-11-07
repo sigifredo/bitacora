@@ -198,7 +198,6 @@ fun ProjectsScreen(vm: AppViewModel) {
             if (section == 0) PendingList(vm) else ProjectTree(vm)
         }
     }
-    vm.pendingEdit?.let { (task, phases) -> TaskDialog(vm, task, phases, task.projectId) { vm.pendingEdit = null } }
     if (about) AboutDialog(vm) { about = false }
     ErrorDialog(vm)
 }
@@ -310,8 +309,6 @@ private fun ProjectTree(vm: AppViewModel) {
 fun ProjectScreen(vm: AppViewModel) {
     val project = vm.projects.firstOrNull { it.id == vm.currentProjectId }
     var tab by rememberSaveable { mutableIntStateOf(0) }
-    // null = ninguna; -1 = tarea nueva; otro valor = id de la tarea que se edita.
-    var editing by rememberSaveable { mutableStateOf<Int?>(null) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -321,7 +318,7 @@ fun ProjectScreen(vm: AppViewModel) {
             )
         },
         floatingActionButton = {
-            if (vm.phases.isNotEmpty()) FloatingActionButton({ editing = -1 }) { Icon(Icons.Default.Add, "Nueva tarea") }
+            if (vm.phases.isNotEmpty()) FloatingActionButton({ vm.openEditor(null) }) { Icon(Icons.Default.Add, "Nueva tarea") }
         },
     ) { pad ->
         Column(Modifier.padding(pad).fillMaxSize()) {
@@ -331,12 +328,9 @@ fun ProjectScreen(vm: AppViewModel) {
             }
             if (vm.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
             // Las tareas de un subproyecto se editan en el propio subproyecto: cada uno tiene sus fases.
-            val open = { t: Task -> if (t.projectId == vm.currentProjectId) editing = t.id else vm.openProject(t.projectId) }
+            val open = { t: Task -> if (t.projectId == vm.currentProjectId) vm.openEditor(t) else vm.openProject(t.projectId) }
             if (tab == 0) BoardView(vm, open) else TableView(vm, open)
         }
-    }
-    editing?.let { id ->
-        TaskDialog(vm, vm.tasks.firstOrNull { it.id == id }, vm.phases, project?.id ?: 0) { editing = null }
     }
     ErrorDialog(vm)
 }
