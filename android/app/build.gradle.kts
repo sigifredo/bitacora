@@ -20,6 +20,8 @@ android {
         targetSdk = 36
         versionCode = vMajor * 10000 + vMinor * 100 + vPatch
         versionName = appVersion
+        // La app solo está en español: se descartan las traducciones que traen las librerías.
+        resourceConfigurations += listOf("es")
     }
 
     // Firma de release: credenciales en keystore.properties (fuera de git). Sin ese archivo el release queda sin firmar.
@@ -36,8 +38,22 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signing
+        }
+    }
+
+    // Bloque cifrado de dependencias que solo usa Play Console; no aporta nada a un APK distribuido directamente.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
+    packaging {
+        resources {
+            excludes += listOf("/META-INF/*.version", "/META-INF/LICENSE*", "/META-INF/NOTICE*", "/META-INF/AL2.0", "/META-INF/LGPL2.1", "/kotlin/**", "/DebugProbesKt.bin")
         }
     }
 
