@@ -1,4 +1,4 @@
-# Sistema de diseño de Bitácora, línea «Esquina»
+# Sistema de diseño de Bitácora
 
 Fuente de verdad visual del frontend (`frontend/`, Vue 3 + SCSS) y de la app de Android (`android/`, Jetpack Compose). Los valores viven en `frontend/src/styles/_theme.scss` y en `android/app/src/main/kotlin/app/bitacora/ui/theme/`; si este documento y el código difieren, corrige el que se haya desviado.
 

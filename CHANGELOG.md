@@ -7,7 +7,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); l
 
 ### Cambiado
 
-- Rediseño visual: línea «Esquina». Nueva identidad (isotipo de hoja con la esquina doblada, paleta de papel, tinta y burdeos, con modo oscuro automático y de azul grisáceo), tipografías Instrument Sans y Geist Mono en lugar de Inter y Kalam, radios y espaciado en escala, etiquetas de prioridad y estado por contraste y no por tono, solapa en la tarjeta del tablero con el foco del teclado, marca de verificación en las fases cerradas y seis colores sugeridos para las fases (el color por defecto de una fase nueva pasa a Sepia `#8A7E68`). El sistema completo está en [`docs/sistema-de-diseno.md`](docs/sistema-de-diseno.md).
+- Rediseño visual. Nueva identidad (isotipo de hoja con la esquina doblada, paleta de papel, tinta y burdeos, con modo oscuro automático y de azul grisáceo), tipografías Instrument Sans y Geist Mono en lugar de Inter y Kalam, radios y espaciado en escala, etiquetas de prioridad y estado por contraste y no por tono, solapa en la tarjeta del tablero con el foco del teclado, marca de verificación en las fases cerradas y seis colores sugeridos para las fases (el color por defecto de una fase nueva pasa a Sepia `#8A7E68`). El sistema completo está en [`docs/sistema-de-diseno.md`](docs/sistema-de-diseno.md).
 
 ### Añadido
 
