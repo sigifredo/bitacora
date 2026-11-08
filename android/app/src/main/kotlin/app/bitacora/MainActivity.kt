@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.activity.enableEdgeToEdge
+import app.bitacora.ui.ErrorDialog
 import app.bitacora.ui.LoginScreen
 import app.bitacora.ui.ProjectScreen
 import app.bitacora.ui.ProjectsScreen
@@ -35,6 +36,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun Root(vm: AppViewModel) {
+    ErrorDialog(vm)
     when {
         !vm.ready -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
         vm.user == null -> LoginScreen(vm)

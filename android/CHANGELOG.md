@@ -2,6 +2,17 @@
 
 La versión de la app es independiente de la del backend y el frontend; la vigente está en `android/VERSION` (el `versionCode` se deriva como `mayor*10000 + menor*100 + parche`). Los cambios del backend y el frontend están en [`../CHANGELOG.md`](../CHANGELOG.md).
 
+## [0.3.1] - 2026-11-08
+
+### Cambiado
+
+- El APK de release se minifica y reduce (`isMinifyEnabled`, `isShrinkResources` y `app/proguard-rules.pro`), se descartan las traducciones de las librerías (solo español), se omite el bloque de información de dependencias y se excluyen archivos de `META-INF` que no aportan.
+- El diálogo de error se muestra una sola vez en `Root` (`MainActivity.kt`) en lugar de en cada pantalla.
+
+### Corregido
+
+- Los errores al guardar, mover o eliminar una tarea no se mostraban en la pantalla de tarea.
+
 ## [0.3.0] - 2026-11-07
 
 ### Cambiado

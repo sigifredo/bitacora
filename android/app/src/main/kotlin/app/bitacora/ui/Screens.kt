@@ -146,7 +146,6 @@ fun LoginScreen(vm: AppViewModel) {
             color = BitacoraTheme.colors.muted, fontFamily = FontFamily.Monospace, fontSize = 11.sp,
         )
     }
-    ErrorDialog(vm)
 }
 
 /** Muestra la versión de la app y la del backend (consultada al abrir el diálogo). */
@@ -208,7 +207,6 @@ fun ProjectsScreen(vm: AppViewModel) {
         }
     }
     if (about) AboutDialog(vm) { about = false }
-    ErrorDialog(vm)
 }
 
 /** Equivale a la tabla de la página principal de la web: filtros por texto y proyecto, urgentes primero. */
@@ -345,7 +343,6 @@ fun ProjectScreen(vm: AppViewModel) {
             if (vm.projectTab == 0) BoardView(vm, open) else TableView(vm, open)
         }
     }
-    ErrorDialog(vm)
 }
 
 /** Cabecera del proyecto, como el `page-head` de la web: ruta, estado, descripción, fechas, progreso y subproyectos. */
